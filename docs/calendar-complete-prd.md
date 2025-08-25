@@ -168,7 +168,7 @@
 2. **반복 종료 조건**
 
    - 특정 날짜까지 반복
-   - 최대 종료일: 2025-10-30
+   - UI 달력 선택 제한: 2025-10-30까지만 선택 가능
 
 3. **특수 날짜 규칙**
 
@@ -322,23 +322,47 @@
 - **Backend**: Express.js (Node.js)
 - **Data Storage**: JSON 파일 (realEvents.json)
 
-### API 설계
+### API 설계 (프론트엔드 관점)
 
-#### 기존 API (유지)
+> **중요**: 백엔드 구현은 고려하지 않습니다. API는 이미 구현되어 있다고 가정하고 프론트엔드 개발에만 집중합니다.
 
-```
+#### 기존 API (Mock/MSW로 시뮬레이션)
+
+```typescript
+// 단위 테스트용 API 인터페이스
 GET /api/events - 모든 일정 조회
 POST /api/events - 단일 일정 생성
 PUT /api/events/:id - 단일 일정 수정
 DELETE /api/events/:id - 단일 일정 삭제
 ```
 
-#### 새로운 배치 API
+#### 새로운 배치 API (Mock/MSW로 시뮬레이션)
 
-```
+```typescript
+// 반복 일정용 배치 API 인터페이스
 POST /api/events-list - 여러 일정 일괄 생성 (반복 일정용)
 PUT /api/events-list - 여러 일정 일괄 수정 (반복 일정 전체 수정)
 DELETE /api/events-list - 여러 일정 일괄 삭제 (반복 일정 전체 삭제)
+```
+
+#### MSW 모킹 전략
+
+```typescript
+// 테스트용 API 모킹 예시
+export const handlers = [
+  rest.post('/api/events-list', (req, res, ctx) => {
+    const { events } = req.body;
+    // 반복 일정 생성 시뮬레이션
+    return res(
+      ctx.status(200),
+      ctx.json({
+        success: true,
+        events: events.map((event) => ({ ...event, id: uuid() })),
+      })
+    );
+  }),
+  // ... 기타 API 핸들러
+];
 ```
 
 ### 데이터 모델
@@ -403,23 +427,178 @@ src/utils/
 
 ### 개발 방법론
 
-- **TDD (Test-Driven Development)**: 새로운 반복 기능은 테스트 우선 개발
-- **점진적 배포**: Epic별 단계적 구현 및 배포
-- **사용자 피드백 수집**: 각 Epic 완료 후 사용자 테스트
+#### **TDD (Test-Driven Development) - 핵심 원칙**
+
+**Kent Beck & Kent C. Dodds의 TDD 원칙을 엄격히 준수합니다:**
+
+1. **Red-Green-Refactor 사이클**
+
+   - 🔴 **Red**: 실패하는 테스트부터 작성
+   - 🟢 **Green**: 테스트를 통과시키는 최소한의 코드 작성
+   - 🔵 **Refactor**: 테스트 통과를 유지하면서 코드 개선
+
+2. **React Testing Library 베스트 프랙티스** ([Kent C. Dodds 가이드](https://kentcdodds.com/blog/common-mistakes-with-react-testing-library) 준수)
+
+   - **사용자 중심 테스트**: 사용자가 상호작용하는 방식대로 테스트
+   - **`screen` 사용**: 쿼리는 `screen.getByRole()` 우선 사용
+   - **실제 텍스트로 쿼리**: `testId` 대신 실제 표시되는 텍스트 사용
+   - **`@testing-library/user-event` 사용**: `fireEvent` 대신 사용자 이벤트 시뮬레이션
+   - **적절한 쿼리 선택**: `get*` vs `find*` vs `query*` 올바른 사용
+   - **`waitFor` 올바른 사용**: 단일 assertion, side-effect 분리
+
+3. **백엔드 독립적 개발**
+   - **프론트엔드만 집중**: 백엔드 코드는 고려하지 않음
+   - **MSW (Mock Service Worker)**: API 모킹으로 독립적 테스트
+   - **서버 상태 시뮬레이션**: 다양한 서버 응답 시나리오 테스트
+
+#### **클린 코드 원칙**
+
+1. **가독성 우선**
+
+   - 의도가 명확한 함수/변수명
+   - 단일 책임 원칙 (SRP) 준수
+   - 복잡한 로직은 작은 단위로 분해
+
+2. **테스트 가능한 설계**
+
+   - 순수 함수 우선 사용
+   - 의존성 주입으로 테스트 용이성 확보
+   - 비즈니스 로직과 UI 로직 분리
+
+3. **점진적 배포**
+   - Epic별 단계적 구현 및 배포
+   - 각 단계마다 완전한 테스트 커버리지 확보
 
 ### 품질 보증
 
-1. **코드 커버리지**: 90% 이상 유지
-2. **성능 모니터링**: 각 기능별 성능 지표 측정
-3. **회귀 테스트**: 기존 기능 영향 없음 확인
-4. **접근성 테스트**: 스크린 리더 및 키보드 네비게이션 확인
+#### **테스트 전략 (Kent C. Dodds 원칙 기반)**
 
-### 위험 관리
+1. **테스트 피라미드 준수**
 
-1. **성능 위험**: 대량 반복 일정 생성 시 -> 최대 100개 제한, 배치 처리
-2. **사용성 위험**: 복잡한 반복 설정 -> UI/UX 단순화, 미리보기 제공
-3. **데이터 무결성 위험**: 반복 그룹 불일치 -> 검증 로직 강화
-4. **브라우저 호환성 위험**: 최신 기능 사용 -> 폴리필 적용
+   - **Unit Tests (70%)**: 순수 함수, 유틸리티, 커스텀 훅
+   - **Integration Tests (20%)**: 컴포넌트 상호작용, API 통합
+   - **E2E Tests (10%)**: 핵심 사용자 시나리오
+
+2. **테스트 작성 원칙**
+
+   ```typescript
+   // ✅ 좋은 예: 사용자 중심 테스트
+   test('사용자가 반복 일정을 생성할 수 있다', async () => {
+     render(<Calendar />);
+
+     await user.click(screen.getByRole('button', { name: /일정 추가/i }));
+     await user.type(screen.getByLabelText(/제목/i), '팀 미팅');
+     await user.selectOptions(screen.getByLabelText(/반복 유형/i), 'weekly');
+
+     await user.click(screen.getByRole('button', { name: /저장/i }));
+
+     expect(screen.getByText('팀 미팅')).toBeInTheDocument();
+     expect(screen.getByLabelText('반복 일정')).toBeInTheDocument();
+   });
+   ```
+
+3. **React Testing Library 엄격 준수**
+   - **ESLint 플러그인 사용**: `eslint-plugin-testing-library`, `eslint-plugin-jest-dom`
+   - **쿼리 우선순위**: `getByRole` > `getByLabelText` > `getByPlaceholderText` > `getByTestId`
+   - **Assertion 명시적 작성**: `expect().toBeInTheDocument()` 항상 명시
+   - **올바른 Async 처리**: `findBy*` vs `waitFor` 적절한 사용
+
+#### **코드 품질 기준**
+
+1. **커버리지 목표**
+
+   - **단위 테스트**: 95% 이상 (핵심 로직)
+   - **통합 테스트**: 90% 이상 (컴포넌트 상호작용)
+   - **E2E 테스트**: 80% 이상 (주요 사용자 플로우)
+
+2. **성능 모니터링**
+
+   - **렌더링 성능**: React DevTools Profiler 사용
+   - **메모리 누수 검사**: 각 컴포넌트 언마운트 후 상태 확인
+   - **알고리즘 성능**: 반복 날짜 계산 벤치마크 테스트
+
+3. **접근성 보장**
+   - **jest-axe**: 자동화된 접근성 테스트
+   - **스크린 리더 호환성**: ARIA 속성 올바른 사용
+   - **키보드 네비게이션**: Tab/Enter/Escape 키 지원
+
+#### **Red-Green-Refactor 워크플로우**
+
+```
+📋 Story 개발 사이클:
+
+1. 🔴 RED Phase
+   - 실패하는 테스트 작성
+   - 비즈니스 요구사항을 테스트로 표현
+   - 테스트 실행하여 실패 확인
+
+2. 🟢 GREEN Phase
+   - 테스트를 통과시키는 최소한의 구현
+   - 품질보다는 동작에 집중
+   - 모든 테스트 통과 확인
+
+3. 🔵 REFACTOR Phase
+   - 코드 품질 개선 (가독성, 성능, 구조)
+   - 테스트 통과 상태 유지
+   - 클린 코드 원칙 적용
+
+4. ✅ INTEGRATION Phase
+   - 통합 테스트 작성 및 실행
+   - 기존 기능과의 호환성 확인
+   - 회귀 테스트 통과 검증
+```
+
+### 위험 관리 (TDD 중심)
+
+#### **개발 위험 및 완화 전략**
+
+1. **테스트 복잡성 위험**
+
+   - **위험**: 반복 일정 알고리즘의 복잡한 테스트 시나리오
+   - **완화**: Red-Green-Refactor 사이클로 단계별 구현, 순수 함수로 분리
+
+2. **성능 위험**
+
+   - **위험**: 대량 반복 일정 생성 시 브라우저 성능 저하
+   - **완화**: 벤치마크 테스트 우선 작성, 최대 100개 제한, 가상화 적용
+
+3. **사용성 위험**
+
+   - **위험**: 복잡한 반복 설정으로 인한 사용자 혼란
+   - **완화**: 사용자 중심 테스트 작성, UI/UX 단순화, 실시간 미리보기
+
+4. **코드 품질 위험**
+   - **위험**: 빠른 개발로 인한 기술 부채 증가
+   - **완화**: 리팩터링 단계 필수화, 코드 리뷰, ESLint/Prettier 자동화
+
+#### **테스트 실패 시나리오**
+
+```typescript
+// 예상 실패 시나리오별 테스트 전략
+describe('반복 일정 위험 시나리오', () => {
+  test('31일 매월 반복 - 2월 건너뜀 확인', () => {
+    // RED: 실패하는 테스트로 시작
+    // GREEN: 최소 구현으로 통과
+    // REFACTOR: 엣지 케이스 처리 개선
+  });
+
+  test('100개 초과 생성 시 성능 저하 방지', () => {
+    // 성능 임계점 테스트
+  });
+
+  test('네트워크 오류 시 부분 생성 롤백', () => {
+    // 에러 복구 시나리오 테스트
+  });
+});
+```
+
+#### **품질 게이트**
+
+- **각 Red-Green-Refactor 사이클마다**:
+  - ✅ 모든 테스트 통과
+  - ✅ ESLint/TypeScript 오류 제로
+  - ✅ 성능 벤치마크 통과
+  - ✅ 접근성 테스트 통과
 
 ## 출시 계획
 
@@ -441,27 +620,127 @@ src/utils/
 - 간격 설정, 전체 관리 기능
 - 사용자 피드백 반영
 
-## 성공 기준
+## 성공 기준 (TDD 기반)
 
-### 기능적 성공 기준
+### **테스트 주도 성공 기준**
 
-- [ ] 모든 기본 일정 관리 기능 정상 동작
-- [ ] 반복 일정 생성/수정/삭제 100% 정확성
-- [ ] 특수 날짜 규칙 (31일, 윤년) 정확한 처리
-- [ ] 배치 API 안정적 동작
+#### **1. Red-Green-Refactor 완성도**
 
-### 성능 성공 기준
+- [ ] **Red Phase**: 모든 기능에 대해 실패하는 테스트 우선 작성 완료
+- [ ] **Green Phase**: 모든 테스트 통과하는 최소 구현 완료
+- [ ] **Refactor Phase**: 모든 코드가 클린 코드 원칙 준수
 
-- [ ] 반복 일정 생성 시간 1초 이내
-- [ ] 페이지 로딩 시간 2초 이내
-- [ ] 메모리 사용량 50MB 이내 유지
-- [ ] 브라우저 크래시 0건
+#### **2. React Testing Library 베스트 프랙티스 준수**
 
-### 사용자 경험 성공 기준
+```typescript
+// 성공 기준 체크리스트
+✅ screen.getByRole() 우선 사용 (testId 사용 최소화)
+✅ 사용자 중심 테스트 (실제 상호작용 시뮬레이션)
+✅ @testing-library/user-event 사용
+✅ 적절한 쿼리 선택 (get*/find*/query*)
+✅ waitFor 올바른 사용 (단일 assertion)
+✅ 명시적 assertion (.toBeInTheDocument() 등)
+```
 
-- [ ] 첫 사용자도 반복 일정 설정 5분 내 완료
-- [ ] 반복 일정 시각적 구분 명확성 100%
-- [ ] 수정/삭제 시 의도와 실제 결과 일치율 95%
-- [ ] 접근성 도구 호환성 100%
+### **기능적 성공 기준 (테스트로 검증)**
 
-이 PRD는 현실적인 제약사항을 고려하면서도 사용자의 요구를 충족하는 실용적인 반복 일정 기능 구현을 목표로 합니다.
+- [ ] **모든 사용자 시나리오가 E2E 테스트로 커버됨**
+
+  - 일정 생성부터 삭제까지 전체 플로우
+  - 반복 일정의 모든 유형 (daily/weekly/monthly/yearly)
+  - 특수 날짜 규칙 (31일, 윤년 2/29) 정확한 처리
+
+- [ ] **엣지 케이스 100% 테스트 커버리지**
+  ```typescript
+  // 필수 테스트 시나리오
+  test('31일 매월 반복 - 2월/4월/6월/9월/11월 건너뜀');
+  test('윤년 2/29 매년 반복 - 평년에는 건너뜀');
+  test('100개 초과 생성 시 오류 처리');
+  test('네트워크 오류 시 부분 생성 롤백');
+  test('동시 수정 시 충돌 해결');
+  ```
+
+### **성능 성공 기준 (벤치마크 테스트)**
+
+- [ ] **알고리즘 성능 테스트 통과**
+
+  ```typescript
+  test('100개 반복 일정 생성 < 1초', () => {
+    const startTime = performance.now();
+    createRecurringEvents(eventData, 100);
+    const endTime = performance.now();
+    expect(endTime - startTime).toBeLessThan(1000);
+  });
+  ```
+
+- [ ] **메모리 누수 테스트 통과**
+  ```typescript
+  test('컴포넌트 언마운트 후 메모리 정리 확인', () => {
+    // 메모리 누수 검증 로직
+  });
+  ```
+
+### **사용자 경험 성공 기준 (통합 테스트)**
+
+- [ ] **접근성 테스트 100% 통과**
+
+  ```typescript
+  test('스크린 리더 호환성', async () => {
+    const results = await axe(container);
+    expect(results).toHaveNoViolations();
+  });
+
+  test('키보드 네비게이션 완전 지원', () => {
+    // Tab/Enter/Escape 키 테스트
+  });
+  ```
+
+- [ ] **사용자 워크플로우 테스트 완료**
+  ```typescript
+  test('신규 사용자도 5분 내 반복 일정 생성', async () => {
+    // 실제 사용자 시나리오 시뮬레이션
+    await user.click(screen.getByRole('button', { name: /일정 추가/i }));
+    // ... 전체 플로우 테스트
+    expect(screen.getByText('반복 일정이 생성되었습니다')).toBeInTheDocument();
+  });
+  ```
+
+### **코드 품질 성공 기준**
+
+- [ ] **테스트 커버리지 목표 달성**
+
+  - Unit Tests: 95% 이상
+  - Integration Tests: 90% 이상
+  - E2E Tests: 80% 이상
+
+- [ ] **정적 분석 도구 통과**
+
+  - ESLint: 0 errors, 0 warnings
+  - TypeScript: strict mode에서 0 errors
+  - Prettier: 100% 포맷팅 준수
+
+- [ ] **Kent C. Dodds 원칙 100% 준수**
+  - Testing Library ESLint 플러그인 통과
+  - 모든 테스트가 사용자 중심으로 작성됨
+  - 실제 DOM 구조와 사용자 상호작용 기반 테스트
+
+**최종 검증**: 모든 테스트가 CI/CD 파이프라인에서 자동으로 통과하며, 수동 테스트 없이도 프로덕션 배포 가능한 수준
+
+## 결론
+
+이 PRD는 **Kent Beck과 Kent C. Dodds의 TDD 원칙을 엄격히 준수**하여 개발되는 캘린더 애플리케이션의 완전한 요구사항을 정의합니다.
+
+### **핵심 원칙**
+
+1. **테스트 우선 개발**: 모든 기능은 실패하는 테스트부터 시작
+2. **사용자 중심 테스트**: React Testing Library로 실제 사용자 상호작용 시뮬레이션
+3. **클린 코드**: Red-Green-Refactor 사이클을 통한 지속적인 코드 품질 향상
+4. **프론트엔드 집중**: 백엔드는 고려하지 않고 프론트엔드 개발에만 집중
+
+### **성공의 정의**
+
+성공은 **모든 테스트가 통과하고, 코드가 클린하며, 사용자가 실제로 사용 가능한 기능**이 완성되었을 때 달성됩니다. 단순한 기능 구현이 아닌, **지속 가능하고 유지보수 가능한 고품질 소프트웨어**의 완성을 목표로 합니다.
+
+---
+
+**"테스트가 없으면 기능이 아니다. 클린하지 않으면 완성이 아니다."** - TDD 개발 철학
