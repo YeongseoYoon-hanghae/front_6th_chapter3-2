@@ -5,10 +5,11 @@ import {
   setupMockHandlerCreation,
   setupMockHandlerDeletion,
   setupMockHandlerUpdating,
+  setupMockHandlerBatchCreation,
 } from '../../__mocks__/handlersUtils.ts';
 import { useEventOperations } from '../../hooks/useEventOperations.ts';
 import { server } from '../../setupTests.ts';
-import { Event } from '../../types.ts';
+import { Event, RepeatType } from '../../types.ts';
 
 const enqueueSnackbarFn = vi.fn();
 
@@ -170,4 +171,122 @@ it("네트워크 오류 시 '일정 삭제 실패'라는 텍스트가 노출되�
   expect(enqueueSnackbarFn).toHaveBeenCalledWith('일정 삭제 실패', { variant: 'error' });
 
   expect(result.current.events).toHaveLength(1);
+});
+
+describe('반복 일정 배치 생성', () => {
+  it('반복 일정을 배치로 생성하면 반복 그룹 ID가 할당되고 성공 메시지가 표시된다', async () => {
+    // Given 반복 일정 데이터가 있으면
+    setupMockHandlerBatchCreation();
+
+    const baseEvent = {
+      title: '팀 회의',
+      date: '2025-10-15',
+      startTime: '09:00',
+      endTime: '10:00',
+      description: '팀 회의입니다',
+      location: '회의실 A',
+      category: '업무',
+      repeat: { type: 'daily' as RepeatType, interval: 1, endDate: '2025-10-17' },
+      notificationTime: 10,
+    };
+
+    const dates = ['2025-10-15', '2025-10-16', '2025-10-17'];
+
+    // When 반복 일정을 배치로 생성하면
+    const { result } = renderHook(() => useEventOperations(false));
+
+    await act(() => Promise.resolve(null));
+
+    await act(async () => {
+      await result.current.createRecurringEvents(baseEvent, dates);
+    });
+
+    // Then 반복 그룹 ID가 할당되고 성공 메시지가 표시된다
+    expect(result.current.events).toHaveLength(3);
+    expect(enqueueSnackbarFn).toHaveBeenCalledWith('반복 일정이 생성되었습니다.', {
+      variant: 'success',
+    });
+
+    // And 반복 그룹 ID가 모두 존재하고 동일하다
+    const repeatEvents = result.current.events.filter((e) => e.repeat.type !== 'none');
+    const groupIds = repeatEvents.map((e) => (e as Event).repeat.id);
+    expect(groupIds.every((id) => typeof id === 'string' && id.length > 0)).toBe(true);
+    const uniqueGroupIds = Array.from(new Set(groupIds));
+    expect(uniqueGroupIds).toHaveLength(1);
+  });
+
+  it('반복 일정 배치 생성 실패 시 오류 메시지가 표시된다', async () => {
+    // Given 서버 오류가 발생하면
+    server.use(
+      http.post('/api/events-list', () => {
+        return new HttpResponse(null, { status: 500 });
+      })
+    );
+
+    const baseEvent = {
+      title: '팀 회의',
+      date: '2025-10-15',
+      startTime: '09:00',
+      endTime: '10:00',
+      description: '팀 회의입니다',
+      location: '회의실 A',
+      category: '업무',
+      repeat: { type: 'daily' as RepeatType, interval: 1, endDate: '2025-10-17' },
+      notificationTime: 10,
+    };
+
+    const dates = ['2025-10-15', '2025-10-16', '2025-10-17'];
+
+    // When 반복 일정을 배치로 생성하면
+    const { result } = renderHook(() => useEventOperations(false));
+
+    await act(() => Promise.resolve(null));
+
+    await act(async () => {
+      await result.current.createRecurringEvents(baseEvent, dates);
+    });
+
+    // Then 오류 메시지가 표시된다
+    expect(enqueueSnackbarFn).toHaveBeenCalledWith('반복 일정 생성 실패', { variant: 'error' });
+
+    server.resetHandlers();
+  });
+
+  it('반복 설정이 없는 일정은 반복 그룹 ID 없이 생성된다', async () => {
+    // Given 반복 설정이 없는 일정 데이터가 있으면
+    setupMockHandlerBatchCreation();
+
+    const baseEvent = {
+      title: '일회성 회의',
+      date: '2025-10-15',
+      startTime: '09:00',
+      endTime: '10:00',
+      description: '일회성 회의입니다',
+      location: '회의실 A',
+      category: '업무',
+      repeat: { type: 'none' as RepeatType, interval: 0 },
+      notificationTime: 10,
+    };
+
+    const dates = ['2025-10-15'];
+
+    // When 반복 일정을 배치로 생성하면
+    const { result } = renderHook(() => useEventOperations(false));
+
+    await act(() => Promise.resolve(null));
+
+    await act(async () => {
+      await result.current.createRecurringEvents(baseEvent, dates);
+    });
+
+    // Then 반복 그룹 ID 없이 생성된다
+    expect(result.current.events).toHaveLength(1);
+    expect(enqueueSnackbarFn).toHaveBeenCalledWith('반복 일정이 생성되었습니다.', {
+      variant: 'success',
+    });
+
+    // And 반복 그룹 ID는 부여되지 않는다
+    const [created] = result.current.events;
+    expect((created as Event).repeat?.id).toBeUndefined();
+  });
 });
