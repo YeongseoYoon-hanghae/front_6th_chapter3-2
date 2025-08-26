@@ -183,6 +183,50 @@ describe('반복 날짜 계산 유틸리티', () => {
       expect(result).toEqual(['2025-10-15']);
     });
   });
+
+  describe('특수 규칙 테스트', () => {
+    it('시작일이 31일인 경우 31일이 있는 달에만 생성된다', () => {
+      // Given 시작일이 2025-01-31이고 종료일이 2025-04-30이면
+      const startDate = '2025-01-31';
+      const endDate = '2025-04-30';
+      const repeatType = 'monthly';
+      const repeatInterval = 1;
+
+      // When 매월 반복 날짜를 계산하면
+      const result = calculateRecurringDates(startDate, endDate, repeatType, repeatInterval);
+
+      // Then 1월 31일, 3월 31일만 포함된 배열이 반환된다 (2월, 4월은 31일이 없으므로 제외)
+      expect(result).toEqual(['2025-01-31', '2025-03-31']);
+    });
+
+    it('시작일이 2월 29일인 경우 윤년에만 생성된다', () => {
+      // Given 시작일이 2024-02-29이고 종료일이 2028-02-29이면
+      const startDate = '2024-02-29';
+      const endDate = '2028-02-29';
+      const repeatType = 'yearly';
+      const repeatInterval = 1;
+
+      // When 매년 반복 날짜를 계산하면
+      const result = calculateRecurringDates(startDate, endDate, repeatType, repeatInterval);
+
+      // Then 2024년 2월 29일만 포함된 배열이 반환된다 (2028년은 2025-10-30 제한으로 제외)
+      expect(result).toEqual(['2024-02-29']);
+    });
+
+    it('시작일이 2월 29일이고 간격이 2년인 경우 윤년에만 생성된다', () => {
+      // Given 시작일이 2024-02-29이고 종료일이 2032-02-29이고 간격이 2이면
+      const startDate = '2024-02-29';
+      const endDate = '2032-02-29';
+      const repeatType = 'yearly';
+      const repeatInterval = 2;
+
+      // When 매년 반복 날짜를 계산하면
+      const result = calculateRecurringDates(startDate, endDate, repeatType, repeatInterval);
+
+      // Then 2024년 2월 29일만 포함된 배열이 반환된다 (2028년, 2032년은 2025-10-30 제한으로 제외)
+      expect(result).toEqual(['2024-02-29']);
+    });
+  });
 });
 
 describe('반복 일정 생성 유틸리티', () => {
