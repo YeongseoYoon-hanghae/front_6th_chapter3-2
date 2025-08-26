@@ -4,6 +4,15 @@ import { formatDate } from './dateUtils';
 const MAX_END_DATE = '2025-10-30';
 
 /**
+ * 윤년인지 판정합니다.
+ * @param year 년도
+ * @returns 윤년이면 true, 아니면 false
+ */
+function isLeapYear(year: number): boolean {
+  return (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
+}
+
+/**
  * 반복 일정의 날짜들을 계산합니다.
  * @param startDate 시작일 (YYYY-MM-DD 형식)
  * @param endDate 종료일 (YYYY-MM-DD 형식)
@@ -60,8 +69,20 @@ export function calculateRecurringDates(
         nextDate.setMonth(currentDate.getMonth() + repeatInterval);
         nextDate.setDate(originalDay);
 
-        // 월말 날짜 보정 (예: 31일 → 30일)
-        if (nextDate.getDate() !== originalDay) {
+        // 31일 특수 규칙: 31일이 없는 달은 건너뛰기
+        if (originalDay === 31 && nextDate.getDate() !== 31) {
+          // 31일이 없는 달이면 다음 달로 건너뛰기
+          nextDate.setMonth(nextDate.getMonth() + 1);
+          nextDate.setDate(31);
+
+          // 여전히 31일이 없으면 한 달 더 건너뛰기
+          if (nextDate.getDate() !== 31) {
+            nextDate.setMonth(nextDate.getMonth() + 1);
+            nextDate.setDate(31);
+          }
+        }
+        // 일반적인 월말 날짜 보정 (예: 30일 → 28일)
+        else if (nextDate.getDate() !== originalDay) {
           nextDate.setDate(0); // 이전 달의 마지막 날로 설정
         }
         break;
@@ -70,7 +91,12 @@ export function calculateRecurringDates(
       case 'yearly': {
         // 윤년 2월 29일 특별 처리
         if (originalMonth === 1 && originalDay === 29) {
-          nextDate.setFullYear(currentDate.getFullYear() + 4);
+          // 다음 윤년까지 건너뛰기
+          let nextYear = currentDate.getFullYear() + repeatInterval;
+          while (!isLeapYear(nextYear)) {
+            nextYear += repeatInterval;
+          }
+          nextDate.setFullYear(nextYear);
         } else {
           nextDate.setFullYear(currentDate.getFullYear() + repeatInterval);
         }
