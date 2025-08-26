@@ -324,6 +324,53 @@ describe('일정 충돌', () => {
   });
 });
 
+describe('반복 일정 테스트', () => {
+  it('반복 일정이 켜져 있으면 반복 필드가 표시된다', async () => {
+    // Given 앱이 렌더링되면
+    setup(<App />);
+
+    // When 반복일정 체크박스가 켜져있어야한다
+    const checkbox = screen.getByRole('checkbox', { name: '반복 일정' });
+    expect(checkbox).toBeChecked();
+
+    // Then 반복 유형/간격/종료일 필드가 표시된다
+    expect(screen.getByLabelText('반복 유형')).toBeInTheDocument();
+    expect(screen.getByLabelText('반복 간격')).toBeInTheDocument();
+    expect(screen.getByLabelText('반복 종료일')).toBeInTheDocument();
+  });
+
+  it('반복 유형 드롭다운을 열면 네 가지 옵션이 보인다', async () => {
+    // Given 반복 필드가 표시되면
+    const { user } = setup(<App />);
+
+    const checkbox = screen.getByRole('checkbox', { name: '반복 일정' });
+    expect(checkbox).toBeChecked();
+
+    // When 드롭다운을 열면
+    await user.click(screen.getByLabelText('반복 유형'));
+
+    // Then 네 가지 옵션이 보인다
+    expect(screen.getByRole('option', { name: '매일' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: '매주' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: '매월' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: '매년' })).toBeInTheDocument();
+  });
+
+  it('종료일은 2025-10-30까지만 선택할 수 있다', async () => {
+    // Given 반복 필드가 표시되면
+    setup(<App />);
+
+    const checkbox = screen.getByRole('checkbox', { name: '반복 일정' });
+    expect(checkbox).toBeChecked();
+
+    // When 종료일 입력 요소를 확인하면
+    const endDateInput = screen.getByLabelText('반복 종료일');
+
+    // Then max 속성이 2025-10-30으로 설정된다
+    expect(endDateInput).toHaveAttribute('max', '2025-10-30');
+  });
+});
+
 it('notificationTime을 10으로 하면 지정 시간 10분 전 알람 텍스트가 노출된다', async () => {
   vi.setSystemTime(new Date('2025-10-15 08:49:59'));
 

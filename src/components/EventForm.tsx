@@ -188,7 +188,11 @@ export const EventForm = ({
       <FormControl>
         <FormControlLabel
           control={
-            <Checkbox checked={isRepeating} onChange={(e) => setIsRepeating(e.target.checked)} />
+            <Checkbox
+              checked={isRepeating}
+              onChange={(e) => setIsRepeating(e.target.checked)}
+              slotProps={{ input: { 'aria-label': '반복 일정' } }}
+            />
           }
           label="반복 일정"
         />
@@ -212,8 +216,10 @@ export const EventForm = ({
       {isRepeating && (
         <Stack spacing={2}>
           <FormControl fullWidth>
-            <FormLabel>반복 유형</FormLabel>
+            <FormLabel id="repeat-type">반복 유형</FormLabel>
             <Select
+              labelId="repeat-type"
+              id="repeat-type"
               size="small"
               value={repeatType}
               onChange={(e) => setRepeatType(e.target.value as RepeatType)}
@@ -226,8 +232,9 @@ export const EventForm = ({
           </FormControl>
           <Stack direction="row" spacing={2}>
             <FormControl fullWidth>
-              <FormLabel>반복 간격</FormLabel>
+              <FormLabel htmlFor="repeat-interval">반복 간격</FormLabel>
               <TextField
+                id="repeat-interval"
                 size="small"
                 type="number"
                 value={repeatInterval}
@@ -236,12 +243,14 @@ export const EventForm = ({
               />
             </FormControl>
             <FormControl fullWidth>
-              <FormLabel>반복 종료일</FormLabel>
+              <FormLabel htmlFor="repeat-end-date">반복 종료일</FormLabel>
               <TextField
+                id="repeat-end-date"
                 size="small"
                 type="date"
                 value={repeatEndDate}
                 onChange={(e) => setRepeatEndDate(e.target.value)}
+                slotProps={{ htmlInput: { max: '2025-10-30' } }}
               />
             </FormControl>
           </Stack>
