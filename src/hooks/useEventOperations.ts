@@ -69,6 +69,32 @@ export const useEventOperations = (editing: boolean, onSave?: () => void) => {
     }
   };
 
+  const createRecurringEvents = async (baseEvent: EventForm, dates: string[]) => {
+    try {
+      // 각 날짜에 대해 이벤트 객체 생성
+      const events = dates.map((date) => ({
+        ...baseEvent,
+        date,
+      }));
+
+      const response = await fetch('/api/events-list', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ events }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to create recurring events');
+      }
+
+      await fetchEvents();
+      enqueueSnackbar('반복 일정이 생성되었습니다.', { variant: 'success' });
+    } catch (error) {
+      console.error('Error creating recurring events:', error);
+      enqueueSnackbar('반복 일정 생성 실패', { variant: 'error' });
+    }
+  };
+
   async function init() {
     await fetchEvents();
     enqueueSnackbar('일정 로딩 완료!', { variant: 'info' });
@@ -79,5 +105,5 @@ export const useEventOperations = (editing: boolean, onSave?: () => void) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  return { events, fetchEvents, saveEvent, deleteEvent };
+  return { events, fetchEvents, saveEvent, deleteEvent, createRecurringEvents };
 };
