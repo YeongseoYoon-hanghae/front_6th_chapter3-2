@@ -1,5 +1,10 @@
 export type RepeatType = 'none' | 'daily' | 'weekly' | 'monthly' | 'yearly';
 
+export enum CalendarViewType {
+  WEEK = 'week',
+  MONTH = 'month',
+}
+
 export interface RepeatInfo {
   type: RepeatType;
   interval: number;

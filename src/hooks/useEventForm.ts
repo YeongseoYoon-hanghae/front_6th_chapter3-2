@@ -1,106 +1,67 @@
-import { ChangeEvent, useState } from 'react';
+import { useEffect } from 'react';
 
 import { Event, RepeatType } from '../types';
-import { getTimeErrorMessage } from '../utils/timeValidation';
-
-type TimeErrorRecord = Record<'startTimeError' | 'endTimeError', string | null>;
+import { useEditingState } from './useEditingState';
+import { useFormState } from './useFormState';
+import { useTimeValidation } from './useTimeValidation';
 
 export const useEventForm = (initialEvent?: Event) => {
-  const [title, setTitle] = useState(initialEvent?.title || '');
-  const [date, setDate] = useState(initialEvent?.date || '');
-  const [startTime, setStartTime] = useState(initialEvent?.startTime || '');
-  const [endTime, setEndTime] = useState(initialEvent?.endTime || '');
-  const [description, setDescription] = useState(initialEvent?.description || '');
-  const [location, setLocation] = useState(initialEvent?.location || '');
-  const [category, setCategory] = useState(initialEvent?.category || '업무');
-  const [isRepeating, setIsRepeating] = useState(initialEvent?.repeat.type !== 'none');
-  const [repeatType, setRepeatType] = useState<RepeatType>(initialEvent?.repeat.type || 'none');
-  const [repeatInterval, setRepeatInterval] = useState(initialEvent?.repeat.interval || 1);
-  const [repeatEndDate, setRepeatEndDate] = useState(initialEvent?.repeat.endDate || '');
-  const [notificationTime, setNotificationTime] = useState(initialEvent?.notificationTime || 10);
+  const { formState, updateField, resetForm, loadEvent } = useFormState(initialEvent);
+  const { editingEvent, isEditing, startEditing, stopEditing, setEditingEvent } = useEditingState();
+  const { startTimeError, endTimeError, createStartTimeHandler, createEndTimeHandler } =
+    useTimeValidation();
 
-  const [editingEvent, setEditingEvent] = useState<Event | null>(null);
-
-  const [{ startTimeError, endTimeError }, setTimeError] = useState<TimeErrorRecord>({
-    startTimeError: null,
-    endTimeError: null,
-  });
-
-  const handleStartTimeChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const newStartTime = e.target.value;
-    setStartTime(newStartTime);
-    setTimeError(getTimeErrorMessage(newStartTime, endTime));
-  };
-
-  const handleEndTimeChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const newEndTime = e.target.value;
-    setEndTime(newEndTime);
-    setTimeError(getTimeErrorMessage(startTime, newEndTime));
-  };
-
-  const resetForm = () => {
-    setTitle('');
-    setDate('');
-    setStartTime('');
-    setEndTime('');
-    setDescription('');
-    setLocation('');
-    setCategory('업무');
-    setIsRepeating(false);
-    setRepeatType('none');
-    setRepeatInterval(1);
-    setRepeatEndDate('');
-    setNotificationTime(10);
-  };
+  useEffect(() => {
+    if (editingEvent) {
+      loadEvent(editingEvent);
+    }
+  }, [editingEvent, loadEvent]);
 
   const editEvent = (event: Event) => {
-    setEditingEvent(event);
-    setTitle(event.title);
-    setDate(event.date);
-    setStartTime(event.startTime);
-    setEndTime(event.endTime);
-    setDescription(event.description);
-    setLocation(event.location);
-    setCategory(event.category);
-    setIsRepeating(event.repeat.type !== 'none');
-    setRepeatType(event.repeat.type);
-    setRepeatInterval(event.repeat.interval);
-    setRepeatEndDate(event.repeat.endDate || '');
-    setNotificationTime(event.notificationTime);
+    startEditing(event);
   };
 
+  const handleReset = () => {
+    resetForm();
+    stopEditing();
+  };
+
+  const handleStartTimeChange = createStartTimeHandler({
+    endTime: formState.endTime,
+    onTimeChange: (time) => updateField('startTime', time),
+  });
+
+  const handleEndTimeChange = createEndTimeHandler({
+    startTime: formState.startTime,
+    onTimeChange: (time) => updateField('endTime', time),
+  });
+
   return {
-    title,
-    setTitle,
-    date,
-    setDate,
-    startTime,
-    setStartTime,
-    endTime,
-    setEndTime,
-    description,
-    setDescription,
-    location,
-    setLocation,
-    category,
-    setCategory,
-    isRepeating,
-    setIsRepeating,
-    repeatType,
-    setRepeatType,
-    repeatInterval,
-    setRepeatInterval,
-    repeatEndDate,
-    setRepeatEndDate,
-    notificationTime,
-    setNotificationTime,
+    ...formState,
+
+    setTitle: (value: string) => updateField('title', value),
+    setDate: (value: string) => updateField('date', value),
+    setStartTime: (value: string) => updateField('startTime', value),
+    setEndTime: (value: string) => updateField('endTime', value),
+    setDescription: (value: string) => updateField('description', value),
+    setLocation: (value: string) => updateField('location', value),
+    setCategory: (value: string) => updateField('category', value),
+    setIsRepeating: (value: boolean) => updateField('isRepeating', value),
+    setRepeatType: (value: RepeatType) => updateField('repeatType', value),
+    setRepeatInterval: (value: number) => updateField('repeatInterval', value),
+    setRepeatEndDate: (value: string) => updateField('repeatEndDate', value),
+    setNotificationTime: (value: number) => updateField('notificationTime', value),
+
     startTimeError,
     endTimeError,
-    editingEvent,
-    setEditingEvent,
     handleStartTimeChange,
     handleEndTimeChange,
-    resetForm,
+
+    editingEvent,
+    setEditingEvent,
+    isEditing,
+
+    resetForm: handleReset,
     editEvent,
   };
 };
