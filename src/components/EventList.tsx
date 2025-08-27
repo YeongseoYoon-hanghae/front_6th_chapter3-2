@@ -9,6 +9,7 @@ import {
   Typography,
 } from '@mui/material';
 
+import { RecurringEventIcon } from './RecurringEventIcon';
 import { Event } from '../types';
 
 interface EventListProps {
@@ -62,6 +63,9 @@ export const EventList = ({
               <Stack>
                 <Stack direction="row" spacing={1} alignItems="center">
                   {notifiedEvents.includes(event.id) && <Notifications color="error" />}
+                  {event.repeat.type !== 'none' && (
+                    <RecurringEventIcon event={event} size="small" />
+                  )}
                   <Typography
                     fontWeight={notifiedEvents.includes(event.id) ? 'bold' : 'normal'}
                     color={notifiedEvents.includes(event.id) ? 'error' : 'inherit'}

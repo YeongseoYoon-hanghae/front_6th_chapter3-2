@@ -221,7 +221,7 @@ export const EventForm = ({
               labelId="repeat-type"
               id="repeat-type"
               size="small"
-              value={repeatType}
+              value={repeatType === 'none' ? 'daily' : repeatType}
               onChange={(e) => setRepeatType(e.target.value as RepeatType)}
             >
               <MenuItem value="daily">매일</MenuItem>
