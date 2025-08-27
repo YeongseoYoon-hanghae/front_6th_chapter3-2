@@ -600,14 +600,21 @@ describe('반복 일정 테스트', () => {
 
   it('이 일정만 수정 후 저장하면 해당 이벤트만 반복 표시가 사라진다', async () => {
     // Given 월 단위 반복 일정이 생성되어 있을 때
-    setupMockHandlerBatchCreation();
+    const mockEvents = setupMockHandlerBatchCreation([]);
 
-    // 단일 수정을 위한 PUT 핸들러 추가
+    // PUT 핸들러만 별도 추가 (mockEvents 배열 업데이트)
     server.use(
       http.put('/api/events/:id', async ({ params, request }) => {
         const { id } = params;
         const updatedEvent = (await request.json()) as Event;
-        return HttpResponse.json({ ...updatedEvent, id });
+
+        // mockEvents 배열에서 해당 이벤트 찾아서 업데이트
+        const index = mockEvents.findIndex((event) => event.id === id);
+        if (index !== -1) {
+          mockEvents[index] = { ...mockEvents[index], ...updatedEvent };
+        }
+
+        return HttpResponse.json(mockEvents[index]);
       })
     );
 
