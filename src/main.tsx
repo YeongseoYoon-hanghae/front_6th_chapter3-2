@@ -1,6 +1,7 @@
 import CssBaseline from '@mui/material/CssBaseline';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { SnackbarProvider } from 'notistack';
+import { OverlayProvider } from 'overlay-kit';
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 
@@ -13,7 +14,9 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <SnackbarProvider>
-        <App />
+        <OverlayProvider>
+          <App />
+        </OverlayProvider>
       </SnackbarProvider>
     </ThemeProvider>
   </React.StrictMode>

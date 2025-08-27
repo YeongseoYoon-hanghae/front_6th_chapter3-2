@@ -1,5 +1,3 @@
-import { useEffect } from 'react';
-
 import { Event, RepeatType } from '../types';
 import { useEditingState } from './useEditingState';
 import { useFormState } from './useFormState';
@@ -11,13 +9,8 @@ export const useEventForm = (initialEvent?: Event) => {
   const { startTimeError, endTimeError, createStartTimeHandler, createEndTimeHandler } =
     useTimeValidation();
 
-  useEffect(() => {
-    if (editingEvent) {
-      loadEvent(editingEvent);
-    }
-  }, [editingEvent, loadEvent]);
-
   const editEvent = (event: Event) => {
+    loadEvent(event);
     startEditing(event);
   };
 

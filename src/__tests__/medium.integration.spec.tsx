@@ -4,7 +4,9 @@ import { render, screen, within, act } from '@testing-library/react';
 import { UserEvent, userEvent } from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { SnackbarProvider } from 'notistack';
+import { OverlayProvider } from 'overlay-kit';
 import { ReactElement } from 'react';
+import { debug } from 'vitest-preview';
 
 import {
   setupMockHandlerCreation,
@@ -25,7 +27,9 @@ const setup = (element: ReactElement) => {
     ...render(
       <ThemeProvider theme={theme}>
         <CssBaseline />
-        <SnackbarProvider>{element}</SnackbarProvider>
+        <SnackbarProvider>
+          <OverlayProvider>{element}</OverlayProvider>
+        </SnackbarProvider>
       </ThemeProvider>
     ),
     user,
@@ -296,6 +300,8 @@ describe('일정 충돌', () => {
       location: '회의실 A',
       category: '업무',
     });
+
+    debug();
 
     expect(screen.getByText('일정 겹침 경고')).toBeInTheDocument();
     expect(screen.getByText(/다음 일정과 겹칩니다/)).toBeInTheDocument();
