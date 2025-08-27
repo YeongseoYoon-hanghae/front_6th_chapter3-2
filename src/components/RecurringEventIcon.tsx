@@ -2,6 +2,7 @@ import { Cached, Event as EventIcon, Loop, Repeat } from '@mui/icons-material';
 import { Box, Tooltip } from '@mui/material';
 import React from 'react';
 
+import { REPEAT_LABEL_MAP } from '../policy';
 import { Event } from '../types';
 
 type IconSize = 'small' | 'medium' | 'large';
@@ -51,15 +52,8 @@ export const RecurringEventIcon: React.FC<RecurringEventIconProps> = ({
   const icon = getIconByType(event.repeat.type);
   const pixel = toPx(size);
 
-  const repeatLabelMap: Record<Exclude<Event['repeat']['type'], 'none'>, string> = {
-    daily: '매일',
-    weekly: '매주',
-    monthly: '매월',
-    yearly: '매년',
-  };
-
   const tooltip = `반복: ${
-    repeatLabelMap[event.repeat.type as Exclude<Event['repeat']['type'], 'none'>]
+    REPEAT_LABEL_MAP[event.repeat.type as Exclude<Event['repeat']['type'], 'none'>]
   }${
     event.repeat.interval && event.repeat.interval !== 1 ? ` (간격 ${event.repeat.interval})` : ''
   }${event.repeat.endDate ? `, 종료 ${event.repeat.endDate}` : ''}`;
