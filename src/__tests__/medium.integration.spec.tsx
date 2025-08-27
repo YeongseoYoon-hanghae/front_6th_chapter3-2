@@ -369,7 +369,6 @@ describe('일정 충돌', () => {
 
 describe('반복 일정 테스트', () => {
   it('반복 일정 편집 클릭이면 다이얼로그가 표시된다', async () => {
-    vi.setSystemTime(new Date('2025-10-01'));
     setupMockHandlerBatchCreation([]);
     const { user } = setup(<App />);
 
@@ -403,7 +402,6 @@ describe('반복 일정 테스트', () => {
   });
 
   it('이 일정만 수정 선택이면 편집 모드로 진입한다', async () => {
-    vi.setSystemTime(new Date('2025-10-01'));
     setupMockHandlerBatchCreation([]);
     const { user } = setup(<App />);
 
@@ -440,7 +438,6 @@ describe('반복 일정 테스트', () => {
   });
 
   it('취소 선택이면 변경 없이 종료된다', async () => {
-    vi.setSystemTime(new Date('2025-10-01'));
     setupMockHandlerBatchCreation([]);
     const { user } = setup(<App />);
 
@@ -525,7 +522,6 @@ describe('반복 일정 테스트', () => {
   });
 
   it('반복 일정 저장 시 성공 스낵바가 노출된다', async () => {
-    vi.setSystemTime(new Date('2025-10-01'));
     setupMockHandlerBatchCreation();
 
     const { user } = setup(<App />);
@@ -548,7 +544,6 @@ describe('반복 일정 테스트', () => {
   });
 
   it('Week 뷰에 반복 일정이 표시된다', async () => {
-    vi.setSystemTime(new Date('2025-10-01'));
     setupMockHandlerBatchCreation();
 
     const { user } = setup(<App />);
@@ -574,7 +569,6 @@ describe('반복 일정 테스트', () => {
   });
 
   it('Month 뷰에 반복 일정이 표시된다', async () => {
-    vi.setSystemTime(new Date('2025-10-01'));
     setupMockHandlerBatchCreation();
 
     const { user } = setup(<App />);
@@ -602,6 +596,40 @@ describe('반복 일정 테스트', () => {
     }
     const items = await monthView.findAllByText('반복 회의');
     expect(items.length).toBeGreaterThan(0);
+  });
+
+  it('이 일정만 수정 후 저장하면 해당 이벤트만 반복 표시가 사라진다', async () => {
+    // Given 시스템 시간이 2025-10-01로 설정되고 월 단위 반복 일정이 생성되어 있을 때
+    vi.setSystemTime(new Date('2025-10-01'));
+    setupMockHandlerBatchCreation();
+
+    const { user } = setup(<App />);
+    await saveRecurringSchedule(
+      user,
+      {
+        title: '반복 회의',
+        date: '2025-10-01',
+        startTime: '09:00',
+        endTime: '10:00',
+        description: '반복 테스트',
+        location: '회의실 A',
+        category: '업무',
+        repeat: { type: 'monthly', interval: 1, endDate: '2025-11-29' },
+      },
+      { submit: true }
+    );
+
+    // When 첫 번째 항목을 편집하고 "이 일정만 수정"을 선택하여 저장하면
+    const editButtons = await screen.findAllByLabelText('Edit event');
+    await user.click(editButtons[0]);
+    const onlyThisBtn = await screen.findByRole('button', { name: '이 일정만 수정' });
+    await user.click(onlyThisBtn);
+    await user.click(screen.getByTestId('event-submit-button'));
+
+    // Then 해당 이벤트는 존재하지만 반복 일정 아이콘은 사라진다
+    const eventList = within(screen.getByTestId('event-list'));
+    expect(eventList.getByText('반복 회의')).toBeInTheDocument();
+    expect(eventList.queryByLabelText('반복 일정 아이콘')).toBeNull();
   });
 });
 
