@@ -1,7 +1,11 @@
 import { describe, it, expect } from 'vitest';
 
-import { EventForm } from '../../types';
-import { calculateRecurringDates, generateRepeatEvents } from '../../utils/recurringUtils';
+import { Event, EventForm } from '../../types';
+import {
+  calculateRecurringDates,
+  generateRepeatEvents,
+  convertToSingleEvent,
+} from '../../utils/recurringUtils';
 
 describe('반복 날짜 계산 유틸리티', () => {
   describe('매일 반복 날짜 계산', () => {
@@ -309,5 +313,36 @@ describe('반복 일정 생성 유틸리티', () => {
       expect(result[1].date).toBe('2025-10-29');
       expect(result[2].date).toBe('2025-10-30');
     });
+  });
+});
+
+describe('반복→단일 전환 유틸리티', () => {
+  it('반복 이벤트를 단일로 전환하면 반복 표시는 사라진다', () => {
+    // Given 사용자에게 주간 반복 이벤트가 있다 (id로 동일 그룹 식별)
+    const original: Event = {
+      id: 'abc',
+      title: '반복 이벤트',
+      date: '2025-10-15',
+      startTime: '09:00',
+      endTime: '10:00',
+      description: '',
+      location: '',
+      category: '업무',
+      repeat: { type: 'weekly', interval: 1, endDate: '2025-10-29', id: 'repeat-1' },
+      notificationTime: 10,
+    };
+
+    // When 단일 이벤트로 전환하면
+    const single = convertToSingleEvent(original);
+
+    // Then 사용자 입장에서는 더 이상 반복이 아니다 (아이콘/그룹 해제 조건)
+    expect(single.repeat.type).toBe('none');
+    expect(single.repeat.interval).toBe(0);
+    expect('id' in single.repeat).toBe(false);
+
+    // And 원본 데이터는 변하지 않는다 (불변성 보장)
+    expect(original.repeat.type).toBe('weekly');
+    expect(original.repeat.interval).toBe(1);
+    expect(original.repeat.id).toBe('repeat-1');
   });
 });
