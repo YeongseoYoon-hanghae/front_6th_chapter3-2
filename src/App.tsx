@@ -8,6 +8,7 @@ import { EventForm } from './components/EventForm';
 import { EventList } from './components/EventList';
 import { NotificationPanel } from './components/NotificationPanel';
 import { OverlapWarningDialog } from './components/OverlapWarningDialog';
+import { RecurringEditDialog } from './components/RecurringEditDialog';
 import { useCalendarView } from './hooks/useCalendarView.ts';
 import { useEventForm } from './hooks/useEventForm.ts';
 import { useEventOperations } from './hooks/useEventOperations.ts';
@@ -156,6 +157,25 @@ function App() {
     }
   };
 
+  // 반복 일정 편집 확인 다이얼로그 열기 로직
+  const handleEditRecurringEvent = (event: Event) => {
+    if (event.repeat.type !== 'none') {
+      overlay.open(({ isOpen, close }) => (
+        <RecurringEditDialog
+          isOpen={isOpen}
+          targetEvent={event}
+          onCancel={close}
+          onEditSingle={() => {
+            close();
+            editEvent(event);
+          }}
+        />
+      ));
+    } else {
+      editEvent(event);
+    }
+  };
+
   return (
     <Box sx={{ width: '100%', height: '100vh', margin: 'auto', p: 5 }}>
       <Stack direction="row" spacing={6} sx={{ height: '100%' }}>
@@ -209,7 +229,7 @@ function App() {
           searchTerm={searchTerm}
           setSearchTerm={setSearchTerm}
           notifiedEvents={notifiedEvents}
-          onEditEvent={editEvent}
+          onEditEvent={handleEditRecurringEvent}
           onDeleteEvent={deleteEvent}
         />
       </Stack>
