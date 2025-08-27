@@ -61,7 +61,7 @@ export const RecurringEventIcon: React.FC<RecurringEventIconProps> = ({
   return (
     <Tooltip title={tooltip} placement="top" arrow disableInteractive>
       <Box
-        aria-label="반복 일정"
+        aria-label="반복 일정 아이콘"
         role="img"
         tabIndex={0}
         sx={{

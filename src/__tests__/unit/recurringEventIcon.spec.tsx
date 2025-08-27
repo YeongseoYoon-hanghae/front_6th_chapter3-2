@@ -26,14 +26,14 @@ describe('RecurringEventIcon', () => {
   it('반복 이벤트면 아이콘을 렌더링한다', () => {
     const event: Event = { ...baseEvent, repeat: { type: 'daily', interval: 1 } };
     render(<RecurringEventIcon event={event} size="small" />);
-    expect(screen.getByLabelText('반복 일정')).toBeInTheDocument();
+    expect(screen.getByLabelText('반복 일정 아이콘')).toBeInTheDocument();
   });
 
   it('툴팁에 반복 정보를 노출한다', async () => {
     const user = userEvent.setup();
     const event: Event = { ...baseEvent, repeat: { type: 'weekly', interval: 1 } };
     render(<RecurringEventIcon event={event} />);
-    await user.hover(screen.getByLabelText('반복 일정'));
+    await user.hover(screen.getByLabelText('반복 일정 아이콘'));
     expect(await screen.findByText(/반복:/)).toBeInTheDocument();
   });
 });

@@ -23,6 +23,6 @@ describe('WeekView - Recurring Icon', () => {
 
     render(<WeekView currentDate={currentDate} filteredEvents={events} notifiedEvents={[]} />);
 
-    expect(screen.getByLabelText('반복 일정')).toBeInTheDocument();
+    expect(screen.getByLabelText('반복 일정 아이콘')).toBeInTheDocument();
   });
 });

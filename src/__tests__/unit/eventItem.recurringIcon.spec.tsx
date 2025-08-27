@@ -25,6 +25,6 @@ describe('EventItem', () => {
   it('반복 이벤트면 아이콘이 표시된다', () => {
     const repeating: Event = { ...baseEvent, repeat: { type: 'daily', interval: 1 } };
     render(<EventItem event={repeating} isNotified={false} />);
-    expect(screen.getByLabelText('반복 일정')).toBeInTheDocument();
+    expect(screen.getByLabelText('반복 일정 아이콘')).toBeInTheDocument();
   });
 });
