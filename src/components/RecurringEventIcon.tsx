@@ -65,9 +65,11 @@ export const RecurringEventIcon: React.FC<RecurringEventIconProps> = ({
   }${event.repeat.endDate ? `, 종료 ${event.repeat.endDate}` : ''}`;
 
   return (
-    <Tooltip title={tooltip} placement="top" arrow>
+    <Tooltip title={tooltip} placement="top" arrow disableInteractive>
       <Box
         aria-label="반복 일정"
+        role="img"
+        tabIndex={0}
         sx={{
           display: 'inline-flex',
           alignItems: 'center',
@@ -75,10 +77,12 @@ export const RecurringEventIcon: React.FC<RecurringEventIconProps> = ({
           position: position === 'top-right' ? 'absolute' : 'relative',
           top: position === 'top-right' ? 4 : 'auto',
           right: position === 'top-right' ? 4 : 'auto',
-          width: pixel,
-          height: pixel,
-          fontSize: pixel,
+          width: { xs: pixel - 4, sm: pixel, md: pixel },
+          height: { xs: pixel - 4, sm: pixel, md: pixel },
+          fontSize: { xs: pixel - 4, sm: pixel, md: pixel },
           color,
+          outline: 'none',
+          '&:focus-visible': { boxShadow: '0 0 0 2px rgba(25, 118, 210, 0.6)', borderRadius: 1 },
         }}
       >
         {icon}
