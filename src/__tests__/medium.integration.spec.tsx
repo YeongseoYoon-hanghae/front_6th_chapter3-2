@@ -599,9 +599,17 @@ describe('반복 일정 테스트', () => {
   });
 
   it('이 일정만 수정 후 저장하면 해당 이벤트만 반복 표시가 사라진다', async () => {
-    // Given 시스템 시간이 2025-10-01로 설정되고 월 단위 반복 일정이 생성되어 있을 때
-    vi.setSystemTime(new Date('2025-10-01'));
+    // Given 월 단위 반복 일정이 생성되어 있을 때
     setupMockHandlerBatchCreation();
+
+    // 단일 수정을 위한 PUT 핸들러 추가
+    server.use(
+      http.put('/api/events/:id', async ({ params, request }) => {
+        const { id } = params;
+        const updatedEvent = (await request.json()) as Event;
+        return HttpResponse.json({ ...updatedEvent, id });
+      })
+    );
 
     const { user } = setup(<App />);
     await saveRecurringSchedule(
