@@ -15,6 +15,7 @@ import { useNotifications } from './hooks/useNotifications.ts';
 import { useSearch } from './hooks/useSearch.ts';
 import { Event, EventForm as EventFormType } from './types';
 import { findOverlappingEvents } from './utils/eventOverlap';
+import { calculateRecurringDates } from './utils/recurringUtils';
 
 function App() {
   const {
@@ -50,8 +51,9 @@ function App() {
     editEvent,
   } = useEventForm();
 
-  const { events, saveEvent, deleteEvent } = useEventOperations(Boolean(editingEvent), () =>
-    setEditingEvent(null)
+  const { events, saveEvent, deleteEvent, createRecurringEvents } = useEventOperations(
+    Boolean(editingEvent),
+    () => setEditingEvent(null)
   );
 
   const { notifications, notifiedEvents, setNotifications } = useNotifications(events);
@@ -88,6 +90,10 @@ function App() {
       notificationTime,
     };
 
+    // 반복 일정 생성 경로: 신규 생성이면서 반복 유형이 실제로 선택된 경우에만 배치 API 사용
+    const shouldCreateBatch =
+      !editingEvent && isRepeating && repeatInterval > 0 && repeatType !== 'none';
+
     const overlapping = findOverlappingEvents(eventData, events);
     if (overlapping.length > 0) {
       overlay.open(({ isOpen, close }) => (
@@ -97,13 +103,55 @@ function App() {
           onClose={close}
           onConfirm={async () => {
             close();
-            await saveEvent(eventData);
+            if (shouldCreateBatch) {
+              const baseEvent: EventFormType = {
+                title,
+                date,
+                startTime,
+                endTime,
+                description,
+                location,
+                category,
+                repeat: {
+                  type: repeatType,
+                  interval: repeatInterval,
+                  endDate: repeatEndDate || undefined,
+                },
+                notificationTime,
+              };
+              const end = repeatEndDate || '2025-10-30';
+              const dates = calculateRecurringDates(date, end, repeatType, repeatInterval);
+              await createRecurringEvents(baseEvent, dates);
+            } else {
+              await saveEvent(eventData);
+            }
             resetForm();
           }}
         />
       ));
     } else {
-      await saveEvent(eventData);
+      if (shouldCreateBatch) {
+        const baseEvent: EventFormType = {
+          title,
+          date,
+          startTime,
+          endTime,
+          description,
+          location,
+          category,
+          repeat: {
+            type: repeatType,
+            interval: repeatInterval,
+            endDate: repeatEndDate || undefined,
+          },
+          notificationTime,
+        };
+        const end = repeatEndDate || '2025-10-30';
+        const dates = calculateRecurringDates(date, end, repeatType, repeatInterval);
+        await createRecurringEvents(baseEvent, dates);
+      } else {
+        await saveEvent(eventData);
+      }
       resetForm();
     }
   };
