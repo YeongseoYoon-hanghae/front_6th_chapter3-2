@@ -12,6 +12,7 @@ import {
   setupMockHandlerCreation,
   setupMockHandlerDeletion,
   setupMockHandlerUpdating,
+  setupMockHandlerBatchCreation,
 } from '../__mocks__/handlersUtils';
 import App from '../App';
 import { server } from '../setupTests';
@@ -374,6 +375,80 @@ describe('반복 일정 테스트', () => {
 
     // Then max 속성이 2025-10-30으로 설정된다
     expect(endDateInput).toHaveAttribute('max', '2025-10-30');
+  });
+
+  it('반복 일정 저장 시 성공 스낵바가 노출된다', async () => {
+    vi.setSystemTime(new Date('2025-10-01'));
+    setupMockHandlerBatchCreation();
+
+    const { user } = setup(<App />);
+    await user.type(screen.getByLabelText('제목'), '반복 회의');
+    await user.type(screen.getByLabelText('날짜'), '2025-10-01');
+    await user.type(screen.getByLabelText('시작 시간'), '09:00');
+    await user.type(screen.getByLabelText('종료 시간'), '10:00');
+    await user.type(screen.getByLabelText('설명'), '반복 테스트');
+    await user.type(screen.getByLabelText('위치'), '회의실 A');
+    await user.click(screen.getByLabelText('반복 유형'));
+    await user.click(screen.getByRole('option', { name: '매주' }));
+    await user.clear(screen.getByLabelText('반복 간격'));
+    await user.type(screen.getByLabelText('반복 간격'), '1');
+    await user.type(screen.getByLabelText('반복 종료일'), '2025-10-29');
+    await user.click(screen.getByTestId('event-submit-button'));
+
+    expect(await screen.findByText('반복 일정이 생성되었습니다.')).toBeInTheDocument();
+  });
+
+  it('Week 뷰에 반복 일정이 표시된다', async () => {
+    vi.setSystemTime(new Date('2025-10-01'));
+    setupMockHandlerBatchCreation();
+
+    const { user } = setup(<App />);
+    await user.type(screen.getByLabelText('제목'), '반복 회의');
+    await user.type(screen.getByLabelText('날짜'), '2025-10-01');
+    await user.type(screen.getByLabelText('시작 시간'), '09:00');
+    await user.type(screen.getByLabelText('종료 시간'), '10:00');
+    await user.type(screen.getByLabelText('설명'), '반복 테스트');
+    await user.type(screen.getByLabelText('위치'), '회의실 A');
+    await user.click(screen.getByLabelText('반복 유형'));
+    await user.click(screen.getByRole('option', { name: '매주' }));
+    await user.clear(screen.getByLabelText('반복 간격'));
+    await user.type(screen.getByLabelText('반복 간격'), '1');
+    await user.type(screen.getByLabelText('반복 종료일'), '2025-10-29');
+    await user.click(screen.getByTestId('event-submit-button'));
+
+    await user.click(within(screen.getByLabelText('뷰 타입 선택')).getByRole('combobox'));
+    await user.click(screen.getByRole('option', { name: 'week-option' }));
+    const weekView = within(screen.getByTestId('week-view'));
+    expect(await weekView.findByText('반복 회의')).toBeInTheDocument();
+  });
+
+  it('Month 뷰에 반복 일정이 표시된다', async () => {
+    vi.setSystemTime(new Date('2025-10-01'));
+    setupMockHandlerBatchCreation();
+
+    const { user } = setup(<App />);
+    await user.type(screen.getByLabelText('제목'), '반복 회의');
+    await user.type(screen.getByLabelText('날짜'), '2025-10-01');
+    await user.type(screen.getByLabelText('시작 시간'), '09:00');
+    await user.type(screen.getByLabelText('종료 시간'), '10:00');
+    await user.type(screen.getByLabelText('설명'), '반복 테스트');
+    await user.type(screen.getByLabelText('위치'), '회의실 A');
+    await user.click(screen.getByLabelText('반복 유형'));
+    await user.click(screen.getByRole('option', { name: '매주' }));
+    await user.clear(screen.getByLabelText('반복 간격'));
+    await user.type(screen.getByLabelText('반복 간격'), '1');
+    await user.type(screen.getByLabelText('반복 종료일'), '2025-10-29');
+    await user.click(screen.getByTestId('event-submit-button'));
+
+    await user.click(within(screen.getByLabelText('뷰 타입 선택')).getByRole('combobox'));
+    await user.click(screen.getByRole('option', { name: 'month-option' }));
+    const monthView = within(screen.getByTestId('month-view'));
+    const monthHeader = screen.getByText(/\d{4}년 \d+월/);
+    if (!/2025년 10월/.test(monthHeader.textContent || '')) {
+      await user.click(screen.getByLabelText('Next'));
+    }
+    const items = await monthView.findAllByText('반복 회의');
+    expect(items.length).toBeGreaterThan(0);
   });
 });
 
