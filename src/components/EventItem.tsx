@@ -1,6 +1,7 @@
 import { Notifications } from '@mui/icons-material';
 import { Box, Stack, Typography } from '@mui/material';
 
+import { RecurringEventIcon } from './RecurringEventIcon';
 import { Event } from '../types';
 
 interface EventItemProps {
@@ -21,10 +22,14 @@ export const EventItem = ({ event, isNotified }: EventItemProps) => {
         minHeight: '18px',
         width: '100%',
         overflow: 'hidden',
+        position: 'relative',
       }}
     >
       <Stack direction="row" spacing={1} alignItems="center">
         {isNotified && <Notifications fontSize="small" />}
+        {event.repeat.type !== 'none' && (
+          <RecurringEventIcon event={event} size="small" position="top-right" />
+        )}
         <Typography variant="caption" noWrap sx={{ fontSize: '0.75rem', lineHeight: 1.2 }}>
           {event.title}
         </Typography>
