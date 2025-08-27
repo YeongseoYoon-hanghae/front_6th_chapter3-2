@@ -1,4 +1,4 @@
-import { RepeatType, EventForm } from '../types';
+import { RepeatType, EventForm, Event } from '../types';
 import { formatDate } from './dateUtils';
 
 const MAX_END_DATE = '2025-10-30';
@@ -144,4 +144,16 @@ export function generateRepeatEvents(eventData: EventForm): EventForm[] {
     ...eventData,
     date: date,
   }));
+}
+
+/**
+ * 반복 이벤트를 단일 이벤트로 전환합니다.
+ * - repeat.type 을 'none'으로 설정
+ * - repeat.id 를 제거
+ */
+export function convertToSingleEvent<T extends Event | EventForm>(event: T): T {
+  const { repeat, ...rest } = event as Event;
+  const nextRepeat = { ...repeat, type: 'none' as RepeatType, interval: 0 };
+  delete (nextRepeat as Event['repeat']).id;
+  return { ...(rest as T), repeat: nextRepeat } as T;
 }

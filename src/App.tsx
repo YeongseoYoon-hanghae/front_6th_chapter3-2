@@ -16,7 +16,7 @@ import { useNotifications } from './hooks/useNotifications.ts';
 import { useSearch } from './hooks/useSearch.ts';
 import { Event, EventForm as EventFormType } from './types';
 import { findOverlappingEvents } from './utils/eventOverlap';
-import { calculateRecurringDates } from './utils/recurringUtils';
+import { calculateRecurringDates, convertToSingleEvent } from './utils/recurringUtils';
 
 function App() {
   const {
@@ -167,7 +167,9 @@ function App() {
           onCancel={close}
           onEditSingle={() => {
             close();
-            editEvent(event);
+
+            const single = convertToSingleEvent(event);
+            editEvent(single);
           }}
         />
       ));
