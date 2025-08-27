@@ -22,7 +22,7 @@ describe('EventItem', () => {
     expect(screen.queryByLabelText('반복 일정')).toBeNull();
   });
 
-  it('반복 이벤트면 아이콘이 표시된다(우상단 배치)', () => {
+  it('반복 이벤트면 아이콘이 표시된다', () => {
     const repeating: Event = { ...baseEvent, repeat: { type: 'daily', interval: 1 } };
     render(<EventItem event={repeating} isNotified={false} />);
     expect(screen.getByLabelText('반복 일정')).toBeInTheDocument();
