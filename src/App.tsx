@@ -8,6 +8,7 @@ import { EventForm } from './components/EventForm';
 import { EventList } from './components/EventList';
 import { NotificationPanel } from './components/NotificationPanel';
 import { OverlapWarningDialog } from './components/OverlapWarningDialog';
+import { RecurringDeleteDialog } from './components/RecurringDeleteDialog';
 import { RecurringEditDialog } from './components/RecurringEditDialog';
 import { useCalendarView } from './hooks/useCalendarView.ts';
 import { useEventForm } from './hooks/useEventForm.ts';
@@ -177,6 +178,27 @@ function App() {
     }
   };
 
+  const handleDeleteRecurringEvent = (eventId: string) => {
+    const event = events.find((e) => e.id === eventId);
+    if (!event) return;
+
+    if (event.repeat.type !== 'none') {
+      overlay.open(({ isOpen, close }) => (
+        <RecurringDeleteDialog
+          isOpen={isOpen}
+          targetEvent={event}
+          onCancel={close}
+          onDeleteSingle={() => {
+            close();
+            deleteEvent(eventId);
+          }}
+        />
+      ));
+    } else {
+      deleteEvent(eventId);
+    }
+  };
+
   return (
     <Box sx={{ width: '100%', height: '100vh', margin: 'auto', p: 5 }}>
       <Stack direction="row" spacing={6} sx={{ height: '100%' }}>
@@ -231,7 +253,7 @@ function App() {
           setSearchTerm={setSearchTerm}
           notifiedEvents={notifiedEvents}
           onEditEvent={handleEditRecurringEvent}
-          onDeleteEvent={deleteEvent}
+          onDeleteEvent={handleDeleteRecurringEvent}
         />
       </Stack>
 
