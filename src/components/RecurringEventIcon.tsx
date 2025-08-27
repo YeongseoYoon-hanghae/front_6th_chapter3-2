@@ -10,6 +10,7 @@ interface RecurringEventIconProps {
   event: Event;
   size?: IconSize;
   position?: 'top-right' | 'inline';
+  color?: string;
 }
 
 const getIconByType = (type: Event['repeat']['type']) => {
@@ -43,6 +44,7 @@ export const RecurringEventIcon: React.FC<RecurringEventIconProps> = ({
   event,
   size = 'medium',
   position = 'inline',
+  color = 'text.secondary',
 }) => {
   if (event.repeat.type === 'none') return null;
 
@@ -76,7 +78,7 @@ export const RecurringEventIcon: React.FC<RecurringEventIconProps> = ({
           width: pixel,
           height: pixel,
           fontSize: pixel,
-          color: 'text.secondary',
+          color,
         }}
       >
         {icon}
