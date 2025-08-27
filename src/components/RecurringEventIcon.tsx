@@ -1,0 +1,88 @@
+import { Cached, Event as EventIcon, Loop, Repeat } from '@mui/icons-material';
+import { Box, Tooltip } from '@mui/material';
+import React from 'react';
+
+import { Event } from '../types';
+
+type IconSize = 'small' | 'medium' | 'large';
+
+interface RecurringEventIconProps {
+  event: Event;
+  size?: IconSize;
+  position?: 'top-right' | 'inline';
+}
+
+const getIconByType = (type: Event['repeat']['type']) => {
+  switch (type) {
+    case 'daily':
+      return <Repeat fontSize="inherit" />;
+    case 'weekly':
+      return <Loop fontSize="inherit" />;
+    case 'monthly':
+      return <Cached fontSize="inherit" />;
+    case 'yearly':
+      return <EventIcon fontSize="inherit" />;
+    default:
+      return <Repeat fontSize="inherit" />;
+  }
+};
+
+const toPx = (size: IconSize) => {
+  switch (size) {
+    case 'small':
+      return 16;
+    case 'large':
+      return 28;
+    case 'medium':
+    default:
+      return 20;
+  }
+};
+
+export const RecurringEventIcon: React.FC<RecurringEventIconProps> = ({
+  event,
+  size = 'medium',
+  position = 'inline',
+}) => {
+  if (event.repeat.type === 'none') return null;
+
+  const icon = getIconByType(event.repeat.type);
+  const pixel = toPx(size);
+
+  const repeatLabelMap: Record<Exclude<Event['repeat']['type'], 'none'>, string> = {
+    daily: '매일',
+    weekly: '매주',
+    monthly: '매월',
+    yearly: '매년',
+  };
+
+  const tooltip = `반복: ${
+    repeatLabelMap[event.repeat.type as Exclude<Event['repeat']['type'], 'none'>]
+  }${
+    event.repeat.interval && event.repeat.interval !== 1 ? ` (간격 ${event.repeat.interval})` : ''
+  }${event.repeat.endDate ? `, 종료 ${event.repeat.endDate}` : ''}`;
+
+  return (
+    <Tooltip title={tooltip} placement="top" arrow>
+      <Box
+        aria-label="반복 일정"
+        sx={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          position: position === 'top-right' ? 'absolute' : 'relative',
+          top: position === 'top-right' ? 4 : 'auto',
+          right: position === 'top-right' ? 4 : 'auto',
+          width: pixel,
+          height: pixel,
+          fontSize: pixel,
+          color: 'text.secondary',
+        }}
+      >
+        {icon}
+      </Box>
+    </Tooltip>
+  );
+};
+
+export default RecurringEventIcon;
