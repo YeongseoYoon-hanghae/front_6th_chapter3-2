@@ -101,10 +101,10 @@ export const setupMockHandlerBatchCreation = (initEvents = [] as Event[]) => {
       return HttpResponse.json({ events: mockEvents });
     }),
     http.post('/api/events-list', async ({ request }) => {
-      const { events } = (await request.json()) as { events: Event[] };
+      const eventsRequest = (await request.json()) as { events: Event[] };
       const repeatId = crypto.randomUUID();
 
-      const newEvents = events.map((event) => {
+      const newEvent = eventsRequest.events.map((event) => {
         const isRepeatEvent = event.repeat.type !== 'none';
         return {
           ...event,
@@ -115,9 +115,10 @@ export const setupMockHandlerBatchCreation = (initEvents = [] as Event[]) => {
           },
         };
       });
-
-      mockEvents.push(...newEvents);
-      return HttpResponse.json(newEvents, { status: 201 });
+      mockEvents.push(...newEvent);
+      return HttpResponse.json(newEvent, { status: 201 });
     })
   );
+
+  return mockEvents;
 };
