@@ -40,7 +40,8 @@ const setup = (element: ReactElement) => {
 // ! Hard 여기 제공 안함
 const saveSchedule = async (
   user: UserEvent,
-  form: Omit<Event, 'id' | 'notificationTime' | 'repeat'>
+  form: Omit<Event, 'id' | 'notificationTime' | 'repeat'>,
+  options?: { submit?: boolean }
 ) => {
   const { title, date, startTime, endTime, location, description, category } = form;
 
@@ -56,7 +57,9 @@ const saveSchedule = async (
   await user.click(within(screen.getByLabelText('카테고리')).getByRole('combobox'));
   await user.click(screen.getByRole('option', { name: `${category}-option` }));
 
-  await user.click(screen.getByTestId('event-submit-button'));
+  if (options?.submit !== false) {
+    await user.click(screen.getByTestId('event-submit-button'));
+  }
 };
 
 describe('일정 CRUD 및 기본 기능', () => {
@@ -382,12 +385,19 @@ describe('반복 일정 테스트', () => {
     setupMockHandlerBatchCreation();
 
     const { user } = setup(<App />);
-    await user.type(screen.getByLabelText('제목'), '반복 회의');
-    await user.type(screen.getByLabelText('날짜'), '2025-10-01');
-    await user.type(screen.getByLabelText('시작 시간'), '09:00');
-    await user.type(screen.getByLabelText('종료 시간'), '10:00');
-    await user.type(screen.getByLabelText('설명'), '반복 테스트');
-    await user.type(screen.getByLabelText('위치'), '회의실 A');
+    await saveSchedule(
+      user,
+      {
+        title: '반복 회의',
+        date: '2025-10-01',
+        startTime: '09:00',
+        endTime: '10:00',
+        description: '반복 테스트',
+        location: '회의실 A',
+        category: '업무',
+      },
+      { submit: false }
+    );
     await user.click(screen.getByLabelText('반복 유형'));
     await user.click(screen.getByRole('option', { name: '매주' }));
     await user.clear(screen.getByLabelText('반복 간격'));
@@ -403,12 +413,19 @@ describe('반복 일정 테스트', () => {
     setupMockHandlerBatchCreation();
 
     const { user } = setup(<App />);
-    await user.type(screen.getByLabelText('제목'), '반복 회의');
-    await user.type(screen.getByLabelText('날짜'), '2025-10-01');
-    await user.type(screen.getByLabelText('시작 시간'), '09:00');
-    await user.type(screen.getByLabelText('종료 시간'), '10:00');
-    await user.type(screen.getByLabelText('설명'), '반복 테스트');
-    await user.type(screen.getByLabelText('위치'), '회의실 A');
+    await saveSchedule(
+      user,
+      {
+        title: '반복 회의',
+        date: '2025-10-01',
+        startTime: '09:00',
+        endTime: '10:00',
+        description: '반복 테스트',
+        location: '회의실 A',
+        category: '업무',
+      },
+      { submit: false }
+    );
     await user.click(screen.getByLabelText('반복 유형'));
     await user.click(screen.getByRole('option', { name: '매주' }));
     await user.clear(screen.getByLabelText('반복 간격'));
@@ -427,12 +444,19 @@ describe('반복 일정 테스트', () => {
     setupMockHandlerBatchCreation();
 
     const { user } = setup(<App />);
-    await user.type(screen.getByLabelText('제목'), '반복 회의');
-    await user.type(screen.getByLabelText('날짜'), '2025-10-01');
-    await user.type(screen.getByLabelText('시작 시간'), '09:00');
-    await user.type(screen.getByLabelText('종료 시간'), '10:00');
-    await user.type(screen.getByLabelText('설명'), '반복 테스트');
-    await user.type(screen.getByLabelText('위치'), '회의실 A');
+    await saveSchedule(
+      user,
+      {
+        title: '반복 회의',
+        date: '2025-10-01',
+        startTime: '09:00',
+        endTime: '10:00',
+        description: '반복 테스트',
+        location: '회의실 A',
+        category: '업무',
+      },
+      { submit: false }
+    );
     await user.click(screen.getByLabelText('반복 유형'));
     await user.click(screen.getByRole('option', { name: '매주' }));
     await user.clear(screen.getByLabelText('반복 간격'));
