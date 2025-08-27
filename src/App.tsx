@@ -91,9 +91,8 @@ function App() {
       notificationTime,
     };
 
-    // 반복 일정 생성 경로: 신규 생성이면서 반복 유형이 실제로 선택된 경우에만 배치 API 사용
-    const shouldCreateBatch =
-      !editingEvent && isRepeating && repeatInterval > 0 && repeatType !== 'none';
+    // 반복 일정 생성 경로: 신규 생성이면서 반복 일정이 활성화된 경우에만 배치 API 사용
+    const shouldCreateBatch = !editingEvent && isRepeating && repeatInterval > 0;
 
     const overlapping = findOverlappingEvents(eventData, events);
     if (overlapping.length > 0) {
