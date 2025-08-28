@@ -639,6 +639,74 @@ describe('반복 일정 테스트', () => {
     expect(eventList.queryByLabelText('반복 일정 아이콘')).toBeNull();
   });
 
+  it('단일 수정 후 나머지 반복 일정들의 그룹이 유지된다', async () => {
+    const mockEvents = setupMockHandlerBatchCreation([]);
+
+    // PUT 핸들러 추가 (mockEvents 배열 업데이트)
+    server.use(
+      http.put('/api/events/:id', async ({ params, request }) => {
+        const { id } = params;
+        const updatedEvent = (await request.json()) as Event;
+
+        const index = mockEvents.findIndex((event) => event.id === id);
+        if (index !== -1) {
+          mockEvents[index] = { ...mockEvents[index], ...updatedEvent };
+        }
+
+        return HttpResponse.json(mockEvents[index]);
+      })
+    );
+
+    const { user } = setup(<App />);
+
+    // Given 주간 반복 일정 생성 (5개 인스턴스)
+    await saveRecurringSchedule(
+      user,
+      {
+        title: '그룹 무결성 테스트',
+        date: '2025-10-01',
+        startTime: '09:00',
+        endTime: '10:00',
+        description: '무결성 검증',
+        location: '회의실 A',
+        category: '업무',
+        repeat: { type: 'weekly', interval: 1, endDate: '2025-10-29' },
+      },
+      { submit: true }
+    );
+
+    // When 첫 번째 인스턴스를 단일 수정
+    const editButtons = await screen.findAllByLabelText('Edit event');
+    await user.click(editButtons[0]);
+
+    const onlyThisBtn = await screen.findByRole('button', { name: '이 일정만 수정' });
+    await user.click(onlyThisBtn);
+
+    // 제목 변경
+    const titleInput = screen.getByDisplayValue('그룹 무결성 테스트');
+    await user.clear(titleInput);
+    await user.type(titleInput, '단일 수정된 이벤트');
+
+    await user.click(screen.getByTestId('event-submit-button'));
+
+    // Then 첫 번째 이벤트는 단일 이벤트로 변환되고 반복 아이콘이 사라짐
+    const eventList = within(screen.getByTestId('event-list'));
+    expect(eventList.getByText('단일 수정된 이벤트')).toBeInTheDocument();
+
+    // And 나머지 4개 인스턴스는 여전히 반복 그룹으로 유지됨
+    const remainingRecurringEvents = eventList.queryAllByText('그룹 무결성 테스트');
+    expect(remainingRecurringEvents).toHaveLength(4);
+
+    // And 나머지 인스턴스들은 반복 아이콘을 유지함
+    const recurringIcons = screen.getAllByLabelText('반복 일정 아이콘');
+    expect(recurringIcons.length).toBeGreaterThanOrEqual(4);
+
+    // And 단일 수정된 이벤트는 반복 아이콘이 없음
+    const singleEventText = eventList.getByText('단일 수정된 이벤트');
+    const singleEventContainer = singleEventText.closest('[data-testid="event-item"]');
+    expect(singleEventContainer?.querySelector('[aria-label="반복 일정 아이콘"]')).toBeNull();
+  });
+
   it('반복 일정 삭제 클릭 시 확인 다이얼로그가 표시된다', async () => {
     setupMockHandlerBatchCreation([]);
     const { user } = setup(<App />);
