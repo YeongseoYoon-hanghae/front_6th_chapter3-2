@@ -6,7 +6,6 @@ import { http, HttpResponse } from 'msw';
 import { SnackbarProvider } from 'notistack';
 import { OverlayProvider } from 'overlay-kit';
 import { ReactElement } from 'react';
-import { debug } from 'vitest-preview';
 
 import {
   setupMockHandlerCreation,
@@ -338,8 +337,6 @@ describe('일정 충돌', () => {
       location: '회의실 A',
       category: '업무',
     });
-
-    debug();
 
     expect(screen.getByText('일정 겹침 경고')).toBeInTheDocument();
     expect(screen.getByText(/다음 일정과 겹칩니다/)).toBeInTheDocument();
@@ -867,8 +864,6 @@ describe('반복 일정 테스트', () => {
 
     const deleteButton = await screen.findByRole('button', { name: '이 일정만 삭제' });
     await user.click(deleteButton);
-
-    debug();
 
     // Then 삭제 성공 메시지 확인
     await screen.findByText('일정이 삭제되었습니다.');
