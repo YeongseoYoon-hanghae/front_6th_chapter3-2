@@ -1,16 +1,9 @@
-import { Delete, Edit, Notifications } from '@mui/icons-material';
-import {
-  Box,
-  FormControl,
-  FormLabel,
-  IconButton,
-  Stack,
-  TextField,
-  Typography,
-} from '@mui/material';
+import { Stack } from '@mui/material';
 
-import { RecurringEventIcon } from './RecurringEventIcon';
 import { Event } from '../types';
+import { EmptyState } from './EmptyState';
+import { EventCard } from './EventCard';
+import { SearchSection } from './SearchSection';
 
 interface EventListProps {
   events: Event[];
@@ -21,14 +14,15 @@ interface EventListProps {
   onDeleteEvent: (eventId: string) => void;
 }
 
-const notificationOptions = [
-  { value: 1, label: '1분 전' },
-  { value: 10, label: '10분 전' },
-  { value: 60, label: '1시간 전' },
-  { value: 120, label: '2시간 전' },
-  { value: 1440, label: '1일 전' },
-];
-
+/**
+ * 리팩토링된 이벤트 리스트 컴포넌트
+ *
+ * 선언적 개선사항:
+ * - 검색, 빈 상태, 이벤트 카드를 명확한 책임을 가진 컴포넌트로 분리
+ * - 복잡한 조건부 렌더링 로직을 읽기 쉬운 함수로 추상화
+ * - 반복되는 알림 상태 계산을 한 번만 수행
+ * - 명령형 스타일을 선언적 스타일로 전환
+ */
 export const EventList = ({
   events,
   searchTerm,
@@ -37,84 +31,69 @@ export const EventList = ({
   onEditEvent,
   onDeleteEvent,
 }: EventListProps) => {
+  const hasNoEvents = events.length === 0;
+
   return (
     <Stack
       data-testid="event-list"
       spacing={2}
       sx={{ width: '30%', height: '100%', overflowY: 'auto' }}
     >
-      <FormControl fullWidth>
-        <FormLabel htmlFor="search">일정 검색</FormLabel>
-        <TextField
-          id="search"
-          size="small"
-          placeholder="검색어를 입력하세요"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
-      </FormControl>
+      <SearchSection searchTerm={searchTerm} onSearchChange={setSearchTerm} />
 
-      {events.length === 0 ? (
-        <Typography>검색 결과가 없습니다.</Typography>
-      ) : (
-        events.map((event) => (
-          <Box
-            key={event.id}
-            data-testid="event-item"
-            sx={{ border: 1, borderRadius: 2, p: 3, width: '100%' }}
-          >
-            <Stack direction="row" justifyContent="space-between">
-              <Stack>
-                <Stack direction="row" spacing={1} alignItems="center">
-                  {notifiedEvents.includes(event.id) && <Notifications color="error" />}
-                  {event.repeat.type !== 'none' && (
-                    <RecurringEventIcon event={event} size="small" />
-                  )}
-                  <Typography
-                    fontWeight={notifiedEvents.includes(event.id) ? 'bold' : 'normal'}
-                    color={notifiedEvents.includes(event.id) ? 'error' : 'inherit'}
-                  >
-                    {event.title}
-                  </Typography>
-                </Stack>
-                <Typography>{event.date}</Typography>
-                <Typography>
-                  {event.startTime} - {event.endTime}
-                </Typography>
-                <Typography>{event.description}</Typography>
-                <Typography>{event.location}</Typography>
-                <Typography>카테고리: {event.category}</Typography>
-                {event.repeat.type !== 'none' && (
-                  <Typography>
-                    반복: {event.repeat.interval}
-                    {event.repeat.type === 'daily' && '일'}
-                    {event.repeat.type === 'weekly' && '주'}
-                    {event.repeat.type === 'monthly' && '월'}
-                    {event.repeat.type === 'yearly' && '년'}
-                    마다
-                    {event.repeat.endDate && ` (종료: ${event.repeat.endDate})`}
-                  </Typography>
-                )}
-                <Typography>
-                  알림:{' '}
-                  {
-                    notificationOptions.find((option) => option.value === event.notificationTime)
-                      ?.label
-                  }
-                </Typography>
-              </Stack>
-              <Stack>
-                <IconButton aria-label="Edit event" onClick={() => onEditEvent(event)}>
-                  <Edit />
-                </IconButton>
-                <IconButton aria-label="Delete event" onClick={() => onDeleteEvent(event.id)}>
-                  <Delete />
-                </IconButton>
-              </Stack>
-            </Stack>
-          </Box>
-        ))
-      )}
+      <EventListContent
+        events={events}
+        notifiedEvents={notifiedEvents}
+        onEditEvent={onEditEvent}
+        onDeleteEvent={onDeleteEvent}
+        hasNoEvents={hasNoEvents}
+      />
     </Stack>
   );
+};
+
+/**
+ * 이벤트 리스트 내용 섹션
+ * 목적: 빈 상태와 이벤트 목록 표시 로직을 명확하게 분리
+ */
+interface EventListContentProps {
+  events: Event[];
+  notifiedEvents: string[];
+  onEditEvent: (event: Event) => void;
+  onDeleteEvent: (eventId: string) => void;
+  hasNoEvents: boolean;
+}
+
+const EventListContent = ({
+  events,
+  notifiedEvents,
+  onEditEvent,
+  onDeleteEvent,
+  hasNoEvents,
+}: EventListContentProps) => {
+  if (hasNoEvents) {
+    return <EmptyState />;
+  }
+
+  return (
+    <>
+      {events.map((event) => (
+        <EventCard
+          key={event.id}
+          event={event}
+          isNotified={isEventNotified(event.id, notifiedEvents)}
+          onEdit={() => onEditEvent(event)}
+          onDelete={() => onDeleteEvent(event.id)}
+        />
+      ))}
+    </>
+  );
+};
+
+/**
+ * 이벤트가 알림 대상인지 확인
+ * 목적: 반복되는 알림 상태 확인 로직을 한 곳에서 관리
+ */
+const isEventNotified = (eventId: string, notifiedEvents: string[]): boolean => {
+  return notifiedEvents.includes(eventId);
 };
