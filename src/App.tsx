@@ -18,7 +18,7 @@ import { useNotifications } from './hooks/useNotifications.ts';
 import { useSearch } from './hooks/useSearch.ts';
 import { Event, EventForm as EventFormType } from './types';
 import { findOverlappingEvents } from './utils/eventOverlap';
-import { calculateRecurringDates } from './utils/recurringUtils';
+import { calculateRecurringDates, convertToSingleEvent } from './utils/recurringUtils';
 
 function App() {
   const { editingEvent, isSingleEdit, startEdit, startSingleEdit, stopEditing } = useEditingState();
@@ -96,9 +96,7 @@ function App() {
 
     // NOTE:단일 수정 모드인 경우 단일 일정으로 변환
     const finalEventData: Event | EventFormType =
-      isSingleEdit && editingEvent
-        ? { ...eventData, repeat: { type: 'none', interval: 1 } }
-        : eventData;
+      isSingleEdit && editingEvent ? convertToSingleEvent(eventData as Event) : eventData;
 
     const overlapping = findOverlappingEvents(eventData, events);
     if (overlapping.length > 0) {
@@ -129,7 +127,7 @@ function App() {
               const dates = calculateRecurringDates(date, end, repeatType, repeatInterval);
               await createRecurringEvents(baseEvent, dates);
             } else {
-              await saveEvent(eventData);
+              await saveEvent(finalEventData);
             }
             resetForm();
             stopEditing();
