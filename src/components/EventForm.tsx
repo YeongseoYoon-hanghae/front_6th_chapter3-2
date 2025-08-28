@@ -1,30 +1,11 @@
-import {
-  Button,
-  Checkbox,
-  FormControl,
-  FormControlLabel,
-  FormLabel,
-  MenuItem,
-  Select,
-  Stack,
-  TextField,
-  Tooltip,
-  Typography,
-} from '@mui/material';
+import { Button, Stack, Typography } from '@mui/material';
 import React from 'react';
 
 import { Event, RepeatType } from '../types';
-import { getTimeErrorMessage } from '../utils/timeValidation';
-
-const categories = ['업무', '개인', '가족', '기타'];
-
-const notificationOptions = [
-  { value: 1, label: '1분 전' },
-  { value: 10, label: '10분 전' },
-  { value: 60, label: '1시간 전' },
-  { value: 120, label: '2시간 전' },
-  { value: 1440, label: '1일 전' },
-];
+import { BasicInfoSection } from './BasicInfoSection';
+import { NotificationSection } from './NotificationSection';
+import { RepeatSection } from './RepeatSection';
+import { TimeSection } from './TimeSection';
 
 interface EventFormProps {
   title: string;
@@ -62,6 +43,16 @@ interface EventFormProps {
   setRepeatEndDate: (endDate: string) => void;
 }
 
+/**
+ * 리팩토링된 이벤트 폼 컴포넌트
+ *
+ * 선언적 개선사항:
+ * - 4개의 큰 의미 있는 섹션으로 분리 (BasicInfo, Time, Repeat, Notification)
+ * - 20개+ props를 섹션별로 그룹화하여 가독성 향상
+ * - 복잡한 조건부 렌더링을 명확한 컴포넌트로 추상화
+ * - 각 섹션이 독립적으로 테스트 가능한 구조
+ * - 중복 로직 제거 (시간 입력 필드 등)
+ */
 export const EventForm = ({
   title,
   setTitle,
@@ -93,182 +84,86 @@ export const EventForm = ({
   setRepeatInterval,
   setRepeatEndDate,
 }: EventFormProps) => {
-  const formMode = isSingleEdit ? 'single-edit' : 'normal-edit';
+  const formMode = createFormMode(isSingleEdit);
+  const formTitle = createFormTitle(editingEvent);
 
   return (
     <Stack spacing={2} sx={{ width: '20%' }} data-testid={`event-form-${formMode}`}>
-      <Typography variant="h4">{editingEvent ? '일정 수정' : '일정 추가'}</Typography>
+      <FormHeader title={formTitle} />
 
-      <FormControl fullWidth>
-        <FormLabel htmlFor="title">제목</FormLabel>
-        <TextField
-          id="title"
-          size="small"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-        />
-      </FormControl>
+      <BasicInfoSection
+        title={title}
+        onTitleChange={setTitle}
+        date={date}
+        onDateChange={setDate}
+        description={description}
+        onDescriptionChange={setDescription}
+        location={location}
+        onLocationChange={setLocation}
+        category={category}
+        onCategoryChange={setCategory}
+      />
 
-      <FormControl fullWidth>
-        <FormLabel htmlFor="date">날짜</FormLabel>
-        <TextField
-          id="date"
-          size="small"
-          type="date"
-          value={date}
-          onChange={(e) => setDate(e.target.value)}
-        />
-      </FormControl>
+      <TimeSection
+        startTime={startTime}
+        endTime={endTime}
+        startTimeError={startTimeError}
+        endTimeError={endTimeError}
+        onStartTimeChange={handleStartTimeChange}
+        onEndTimeChange={handleEndTimeChange}
+      />
 
-      <Stack direction="row" spacing={2}>
-        <FormControl fullWidth>
-          <FormLabel htmlFor="start-time">시작 시간</FormLabel>
-          <Tooltip title={startTimeError || ''} open={!!startTimeError} placement="top">
-            <TextField
-              id="start-time"
-              size="small"
-              type="time"
-              value={startTime}
-              onChange={handleStartTimeChange}
-              onBlur={() => getTimeErrorMessage(startTime, endTime)}
-              error={!!startTimeError}
-            />
-          </Tooltip>
-        </FormControl>
-        <FormControl fullWidth>
-          <FormLabel htmlFor="end-time">종료 시간</FormLabel>
-          <Tooltip title={endTimeError || ''} open={!!endTimeError} placement="top">
-            <TextField
-              id="end-time"
-              size="small"
-              type="time"
-              value={endTime}
-              onChange={handleEndTimeChange}
-              onBlur={() => getTimeErrorMessage(startTime, endTime)}
-              error={!!endTimeError}
-            />
-          </Tooltip>
-        </FormControl>
-      </Stack>
+      <RepeatSection
+        isRepeating={isRepeating}
+        onIsRepeatingChange={setIsRepeating}
+        repeatType={repeatType}
+        onRepeatTypeChange={setRepeatType}
+        repeatInterval={repeatInterval}
+        onRepeatIntervalChange={setRepeatInterval}
+        repeatEndDate={repeatEndDate}
+        onRepeatEndDateChange={setRepeatEndDate}
+      />
 
-      <FormControl fullWidth>
-        <FormLabel htmlFor="description">설명</FormLabel>
-        <TextField
-          id="description"
-          size="small"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-        />
-      </FormControl>
+      <NotificationSection
+        notificationTime={notificationTime}
+        onNotificationTimeChange={setNotificationTime}
+      />
 
-      <FormControl fullWidth>
-        <FormLabel htmlFor="location">위치</FormLabel>
-        <TextField
-          id="location"
-          size="small"
-          value={location}
-          onChange={(e) => setLocation(e.target.value)}
-        />
-      </FormControl>
-
-      <FormControl fullWidth>
-        <FormLabel id="category-label">카테고리</FormLabel>
-        <Select
-          id="category"
-          size="small"
-          value={category}
-          onChange={(e) => setCategory(e.target.value)}
-          aria-labelledby="category-label"
-          aria-label="카테고리"
-        >
-          {categories.map((cat) => (
-            <MenuItem key={cat} value={cat} aria-label={`${cat}-option`}>
-              {cat}
-            </MenuItem>
-          ))}
-        </Select>
-      </FormControl>
-
-      <FormControl>
-        <FormControlLabel
-          control={
-            <Checkbox
-              checked={isRepeating}
-              onChange={(e) => setIsRepeating(e.target.checked)}
-              slotProps={{ input: { 'aria-label': '반복 일정' } }}
-            />
-          }
-          label="반복 일정"
-        />
-      </FormControl>
-
-      <FormControl fullWidth>
-        <FormLabel htmlFor="notification">알림 설정</FormLabel>
-        <Select
-          id="notification"
-          size="small"
-          value={notificationTime}
-          onChange={(e) => setNotificationTime(Number(e.target.value))}
-        >
-          {notificationOptions.map((option) => (
-            <MenuItem key={option.value} value={option.value}>
-              {option.label}
-            </MenuItem>
-          ))}
-        </Select>
-      </FormControl>
-      {isRepeating && (
-        <Stack spacing={2}>
-          <FormControl fullWidth>
-            <FormLabel id="repeat-type">반복 유형</FormLabel>
-            <Select
-              labelId="repeat-type"
-              id="repeat-type"
-              size="small"
-              value={repeatType}
-              onChange={(e) => setRepeatType(e.target.value as RepeatType)}
-            >
-              <MenuItem value="daily">매일</MenuItem>
-              <MenuItem value="weekly">매주</MenuItem>
-              <MenuItem value="monthly">매월</MenuItem>
-              <MenuItem value="yearly">매년</MenuItem>
-            </Select>
-          </FormControl>
-          <Stack direction="row" spacing={2}>
-            <FormControl fullWidth>
-              <FormLabel htmlFor="repeat-interval">반복 간격</FormLabel>
-              <TextField
-                id="repeat-interval"
-                size="small"
-                type="number"
-                value={repeatInterval}
-                onChange={(e) => setRepeatInterval(Number(e.target.value))}
-                slotProps={{ htmlInput: { min: 1 } }}
-              />
-            </FormControl>
-            <FormControl fullWidth>
-              <FormLabel htmlFor="repeat-end-date">반복 종료일</FormLabel>
-              <TextField
-                id="repeat-end-date"
-                size="small"
-                type="date"
-                value={repeatEndDate}
-                onChange={(e) => setRepeatEndDate(e.target.value)}
-                slotProps={{ htmlInput: { max: '2025-10-30' } }}
-              />
-            </FormControl>
-          </Stack>
-        </Stack>
-      )}
-
-      <Button
-        data-testid="event-submit-button"
-        onClick={onSubmit}
-        variant="contained"
-        color="primary"
-      >
-        {editingEvent ? '일정 수정' : '일정 추가'}
-      </Button>
+      <SubmitButton onSubmit={onSubmit} isEditing={!!editingEvent} />
     </Stack>
   );
+};
+
+/**
+ * 폼 헤더 컴포넌트
+ * 목적: 폼 제목 표시의 명확한 책임 분리
+ */
+const FormHeader = ({ title }: { title: string }) => <Typography variant="h4">{title}</Typography>;
+
+/**
+ * 제출 버튼 컴포넌트
+ * 목적: 제출 버튼의 상태별 텍스트를 명확하게 관리
+ */
+const SubmitButton = ({ onSubmit, isEditing }: { onSubmit: () => void; isEditing: boolean }) => (
+  <Button data-testid="event-submit-button" onClick={onSubmit} variant="contained" color="primary">
+    {isEditing ? '일정 수정' : '일정 추가'}
+  </Button>
+);
+
+// === 선언적 헬퍼 함수들 ===
+
+/**
+ * 폼 모드를 생성합니다
+ * 목적: 폼 모드 결정 로직을 명확하게 표현
+ */
+const createFormMode = (isSingleEdit: boolean): string => {
+  return isSingleEdit ? 'single-edit' : 'normal-edit';
+};
+
+/**
+ * 폼 제목을 생성합니다
+ * 목적: 편집/추가 상태에 따른 제목 결정 로직을 분리
+ */
+const createFormTitle = (editingEvent: Event | null): string => {
+  return editingEvent ? '일정 수정' : '일정 추가';
 };
