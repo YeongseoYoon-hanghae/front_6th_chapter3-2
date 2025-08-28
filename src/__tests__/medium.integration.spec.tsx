@@ -751,6 +751,68 @@ describe('반복 일정 테스트', () => {
     // 원래 5개에서 1개가 삭제되어 4개가 남아있어야 함
     expect(eventList.queryAllByText('삭제할 반복 회의')).toHaveLength(4);
   });
+
+  it('반복 일정 단일 삭제 후 나머지 반복 일정들이 반복 아이콘과 함께 표시된다', async () => {
+    const mockEvents = setupMockHandlerBatchCreation([]);
+    const { user } = setup(<App />);
+
+    // Given 반복 일정 생성 (5개 인스턴스)
+    await saveRecurringSchedule(user, {
+      title: '삭제 테스트 반복 회의',
+      date: '2025-10-01',
+      startTime: '09:00',
+      endTime: '10:00',
+      description: '삭제 테스트',
+      location: '회의실 A',
+      category: '업무',
+      repeat: {
+        type: 'weekly',
+        interval: 1,
+        endDate: '2025-10-29',
+      },
+    });
+
+    // 초기 상태: 5개의 반복 일정이 모두 반복 아이콘과 함께 표시
+    const eventList = within(screen.getByTestId('event-list'));
+    const initialEvents = eventList.queryAllByText('삭제 테스트 반복 회의');
+    expect(initialEvents).toHaveLength(5);
+
+    // 모든 인스턴스에 반복 아이콘이 있는지 확인
+    const recurringIcons = screen.getAllByLabelText('반복 일정 아이콘');
+    expect(recurringIcons.length).toBeGreaterThanOrEqual(5);
+
+    // DELETE 핸들러 추가
+    server.use(
+      http.delete('/api/events/:id', ({ params }) => {
+        const { id } = params;
+        const index = mockEvents.findIndex((event) => event.id === id);
+        if (index !== -1) {
+          mockEvents.splice(index, 1);
+        }
+        return HttpResponse.json({ success: true }, { status: 200 });
+      })
+    );
+
+    // When 첫 번째 인스턴스 삭제
+    const deleteButtons = await screen.findAllByLabelText('Delete event');
+    await user.click(deleteButtons[0]);
+
+    const deleteButton = await screen.findByRole('button', { name: '이 일정만 삭제' });
+    await user.click(deleteButton);
+
+    debug();
+
+    // Then 삭제 성공 메시지 확인
+    await screen.findByText('일정이 삭제되었습니다.');
+
+    // 4개의 인스턴스가 남아있고 모두 반복 아이콘과 함께 표시되어야 함
+    const remainingEvents = eventList.queryAllByText('삭제 테스트 반복 회의');
+    expect(remainingEvents).toHaveLength(4);
+
+    // 나머지 인스턴스들이 여전히 반복 아이콘을 가지고 있는지 확인
+    const remainingRecurringIcons = screen.getAllByLabelText('반복 일정 아이콘');
+    expect(remainingRecurringIcons.length).toBeGreaterThanOrEqual(4);
+  });
 });
 
 it('notificationTime을 10으로 하면 지정 시간 10분 전 알람 텍스트가 노출된다', async () => {
