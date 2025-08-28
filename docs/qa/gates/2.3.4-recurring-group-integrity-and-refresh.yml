@@ -42,3 +42,4 @@ recommendations:
       refs: ['src/hooks/useEventOperations.ts:45']
     - action: '서비스 계층 캡슐화 검토'
       refs: ['src/utils/recurringUtils.ts']
+

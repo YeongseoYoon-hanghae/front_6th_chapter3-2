@@ -40,3 +40,4 @@ recommendations:
       refs: ['src/utils/recurringUtils.ts:155']
     - action: '에러 시나리오 테스트 추가'
       refs: ['src/__tests__/unit/recurringUtils.spec.ts']
+

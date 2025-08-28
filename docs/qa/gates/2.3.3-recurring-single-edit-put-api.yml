@@ -40,3 +40,4 @@ recommendations:
       refs: ['src/hooks/useEventOperations.ts:45']
     - action: '네트워크 오류 시 롤백 메커니즘 추가'
       refs: ['src/hooks/useEventOperations.ts:50-53']
+

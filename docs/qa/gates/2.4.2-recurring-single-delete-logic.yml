@@ -40,3 +40,4 @@ recommendations:
       refs: ['src/hooks/useEventOperations.ts:64']
     - action: '2.4.4 무결성 검증 로직과 연계 준비'
       refs: ['src/App.tsx:181-200']
+

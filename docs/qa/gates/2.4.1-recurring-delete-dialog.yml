@@ -38,3 +38,4 @@ recommendations:
   future:
     - action: '전체 그룹 삭제 옵션 추가 준비'
       refs: ['src/components/RecurringDeleteDialog.tsx']
+
