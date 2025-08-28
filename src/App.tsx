@@ -228,6 +228,7 @@ function App() {
           handleStartTimeChange={handleStartTimeChange}
           handleEndTimeChange={handleEndTimeChange}
           editingEvent={editingEvent}
+          isSingleEdit={isSingleEdit}
           onSubmit={addOrUpdateEvent}
           repeatType={repeatType}
           repeatInterval={repeatInterval}

@@ -50,6 +50,7 @@ interface EventFormProps {
   handleEndTimeChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
 
   editingEvent: Event | null;
+  isSingleEdit?: boolean;
 
   onSubmit: () => void;
 
@@ -83,6 +84,7 @@ export const EventForm = ({
   handleStartTimeChange,
   handleEndTimeChange,
   editingEvent,
+  isSingleEdit = false,
   onSubmit,
   repeatType,
   repeatInterval,
@@ -91,8 +93,10 @@ export const EventForm = ({
   setRepeatInterval,
   setRepeatEndDate,
 }: EventFormProps) => {
+  const formMode = isSingleEdit ? 'single-edit' : 'normal-edit';
+
   return (
-    <Stack spacing={2} sx={{ width: '20%' }}>
+    <Stack spacing={2} sx={{ width: '20%' }} data-testid={`event-form-${formMode}`}>
       <Typography variant="h4">{editingEvent ? '일정 수정' : '일정 추가'}</Typography>
 
       <FormControl fullWidth>
