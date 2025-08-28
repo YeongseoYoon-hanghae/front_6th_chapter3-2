@@ -1,22 +1,14 @@
 import { Event, RepeatType } from '../types';
-import { useEditingState } from './useEditingState';
 import { useFormState } from './useFormState';
 import { useTimeValidation } from './useTimeValidation';
 
-export const useEventForm = (initialEvent?: Event) => {
-  const { formState, updateField, resetForm, loadEvent } = useFormState(initialEvent);
-  const { editingEvent, isEditing, startEditing, stopEditing, setEditingEvent } = useEditingState();
+export const useEventForm = (editingEvent?: Event | null) => {
+  const { formState, updateField, resetForm } = useFormState(editingEvent || undefined);
   const { startTimeError, endTimeError, createStartTimeHandler, createEndTimeHandler } =
     useTimeValidation();
 
-  const editEvent = (event: Event) => {
-    loadEvent(event);
-    startEditing(event);
-  };
-
   const handleReset = () => {
     resetForm();
-    stopEditing();
   };
 
   const handleStartTimeChange = createStartTimeHandler({
@@ -50,11 +42,6 @@ export const useEventForm = (initialEvent?: Event) => {
     handleStartTimeChange,
     handleEndTimeChange,
 
-    editingEvent,
-    setEditingEvent,
-    isEditing,
-
     resetForm: handleReset,
-    editEvent,
   };
 };

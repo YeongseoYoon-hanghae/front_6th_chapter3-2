@@ -11,15 +11,18 @@ import { OverlapWarningDialog } from './components/OverlapWarningDialog';
 import { RecurringDeleteDialog } from './components/RecurringDeleteDialog';
 import { RecurringEditDialog } from './components/RecurringEditDialog';
 import { useCalendarView } from './hooks/useCalendarView.ts';
+import { useEditingState } from './hooks/useEditingState.ts';
 import { useEventForm } from './hooks/useEventForm.ts';
 import { useEventOperations } from './hooks/useEventOperations.ts';
 import { useNotifications } from './hooks/useNotifications.ts';
 import { useSearch } from './hooks/useSearch.ts';
 import { Event, EventForm as EventFormType } from './types';
 import { findOverlappingEvents } from './utils/eventOverlap';
-import { calculateRecurringDates, convertToSingleEvent } from './utils/recurringUtils';
+import { calculateRecurringDates } from './utils/recurringUtils';
 
 function App() {
+  const { editingEvent, isSingleEdit, startEdit, startSingleEdit, stopEditing } = useEditingState();
+
   const {
     title,
     setTitle,
@@ -45,17 +48,14 @@ function App() {
     setNotificationTime,
     startTimeError,
     endTimeError,
-    editingEvent,
-    setEditingEvent,
     handleStartTimeChange,
     handleEndTimeChange,
     resetForm,
-    editEvent,
-  } = useEventForm();
+  } = useEventForm(editingEvent || undefined);
 
   const { events, saveEvent, deleteEvent, createRecurringEvents } = useEventOperations(
     Boolean(editingEvent),
-    () => setEditingEvent(null)
+    stopEditing
   );
 
   const { notifications, notifiedEvents, setNotifications } = useNotifications(events);
@@ -92,8 +92,13 @@ function App() {
       notificationTime,
     };
 
-    // 반복 일정 생성 경로: 신규 생성이면서 반복 일정이 활성화된 경우에만 배치 API 사용
     const shouldCreateBatch = !editingEvent && isRepeating && repeatInterval > 0;
+
+    // NOTE:단일 수정 모드인 경우 단일 일정으로 변환
+    const finalEventData: Event | EventFormType =
+      isSingleEdit && editingEvent
+        ? { ...eventData, repeat: { type: 'none', interval: 1 } }
+        : eventData;
 
     const overlapping = findOverlappingEvents(eventData, events);
     if (overlapping.length > 0) {
@@ -127,6 +132,7 @@ function App() {
               await saveEvent(eventData);
             }
             resetForm();
+            stopEditing();
           }}
         />
       ));
@@ -151,9 +157,10 @@ function App() {
         const dates = calculateRecurringDates(date, end, repeatType, repeatInterval);
         await createRecurringEvents(baseEvent, dates);
       } else {
-        await saveEvent(eventData);
+        await saveEvent(finalEventData);
       }
       resetForm();
+      stopEditing();
     }
   };
 
@@ -168,13 +175,12 @@ function App() {
           onEditSingle={() => {
             close();
 
-            const single = convertToSingleEvent(event);
-            editEvent(single);
+            startSingleEdit(event);
           }}
         />
       ));
     } else {
-      editEvent(event);
+      startEdit(event);
     }
   };
 

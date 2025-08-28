@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import { Event, RepeatType } from '../types';
 
@@ -34,6 +34,10 @@ const getInitialFormState = (initialEvent?: Event): FormState => ({
 
 export const useFormState = (initialEvent?: Event) => {
   const [formState, setFormState] = useState<FormState>(() => getInitialFormState(initialEvent));
+
+  useEffect(() => {
+    setFormState(getInitialFormState(initialEvent));
+  }, [initialEvent]);
 
   const updateField = useCallback(<K extends keyof FormState>(field: K, value: FormState[K]) => {
     setFormState((prev) => ({ ...prev, [field]: value }));
