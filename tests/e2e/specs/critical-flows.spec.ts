@@ -2,7 +2,6 @@ import { test, expect } from '@playwright/test';
 
 import { resetEventStore, loadSampleData } from '../api';
 import { interceptApi } from '../utils/api-interceptor';
-import { TestDataManager } from '../utils/data-manager';
 
 /**
  * 캘린더 핵심 플로우 E2E 테스트
@@ -15,12 +14,7 @@ import { TestDataManager } from '../utils/data-manager';
  */
 
 test.describe('캘린더 핵심 플로우 E2E 테스트', () => {
-  let dataManager: TestDataManager;
-
   test.beforeEach(async ({ page }) => {
-    dataManager = new TestDataManager();
-    await dataManager.setupCleanState();
-
     // 이벤트 저장소 초기화
     resetEventStore();
 
@@ -32,10 +26,6 @@ test.describe('캘린더 핵심 플로우 E2E 테스트', () => {
     await expect(page.locator('text=일정 보기')).toBeVisible();
 
     await page.waitForLoadState('networkidle');
-  });
-
-  test.afterEach(async () => {
-    await dataManager.cleanup();
   });
 
   /**

@@ -56,18 +56,13 @@ class EventApiInterceptor {
           ...requestBody,
         };
 
-        // 상태에 추가
         this.events.push(newEvent);
-        console.log('➕ POST /api/events - 이벤트 추가됨. 총 이벤트 수:', this.events.length);
-        console.log('➕ 추가된 이벤트:', newEvent.title);
-
         await route.fulfill({
           status: 201,
           contentType: 'application/json',
           body: JSON.stringify(newEvent),
         });
       } else if (method === 'PUT') {
-        // PUT: 이벤트 수정
         const requestBody = await route.request().postDataJSON();
         const url = route.request().url();
         const eventId = url.split('/').pop();
