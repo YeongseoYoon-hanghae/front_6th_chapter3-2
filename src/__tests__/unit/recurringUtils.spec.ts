@@ -5,6 +5,9 @@ import {
   calculateRecurringDates,
   generateRepeatEvents,
   convertToSingleEvent,
+  calculateWeeklyWithSpecificDays,
+  calculateRecurringDatesWithOptions,
+  generateRepeatEventsWithOptions,
 } from '../../utils/recurringUtils';
 
 describe('반복 날짜 계산 유틸리티', () => {
@@ -344,5 +347,226 @@ describe('반복→단일 전환 유틸리티', () => {
     expect(original.repeat.type).toBe('weekly');
     expect(original.repeat.interval).toBe(1);
     expect(original.repeat.id).toBe('repeat-1');
+  });
+});
+
+describe('주간 요일별 날짜 계산 유틸리티', () => {
+  describe('calculateWeeklyWithSpecificDays', () => {
+    describe('기본 동작', () => {
+      it('단일 요일 선택 시 정확한 날짜 반환', () => {
+        const result = calculateWeeklyWithSpecificDays(
+          '2024-01-01', // 월요일
+          '2024-01-15',
+          1,
+          { daysOfWeek: [1] } // 월요일만
+        );
+        expect(result).toEqual(['2024-01-01', '2024-01-08', '2024-01-15']);
+      });
+
+      it('복수 요일 선택 시 정확한 날짜 반환', () => {
+        const result = calculateWeeklyWithSpecificDays(
+          '2024-01-01', // 월요일
+          '2024-01-07',
+          1,
+          { daysOfWeek: [1, 3, 5] } // 월, 수, 금
+        );
+        expect(result).toEqual(['2024-01-01', '2024-01-03', '2024-01-05']);
+      });
+
+      it('시작일이 선택된 요일이 아닌 경우', () => {
+        const result = calculateWeeklyWithSpecificDays(
+          '2024-01-02', // 화요일
+          '2024-01-10',
+          1,
+          { daysOfWeek: [1, 5] } // 월, 금만
+        );
+        expect(result).toEqual(['2024-01-05', '2024-01-08']); // 금요일부터 시작
+      });
+
+      it('interval 간격으로 주 반복', () => {
+        const result = calculateWeeklyWithSpecificDays(
+          '2024-01-01', // 월요일
+          '2024-01-29',
+          2, // 격주
+          { daysOfWeek: [1] } // 월요일
+        );
+        expect(result).toEqual(['2024-01-01', '2024-01-15', '2024-01-29']);
+      });
+    });
+
+    describe('경계값 및 에러 케이스', () => {
+      it('빈 요일 배열에 대해 빈 배열 반환', () => {
+        const result = calculateWeeklyWithSpecificDays('2024-01-01', '2024-01-07', 1, {
+          daysOfWeek: [],
+        });
+        expect(result).toEqual([]);
+      });
+
+      it('유효하지 않은 interval에 대해 빈 배열 반환', () => {
+        const result = calculateWeeklyWithSpecificDays('2024-01-01', '2024-01-07', 0, {
+          daysOfWeek: [1],
+        });
+        expect(result).toEqual([]);
+      });
+
+      it('시작일이 종료일보다 늦은 경우 빈 배열 반환', () => {
+        const result = calculateWeeklyWithSpecificDays('2024-01-15', '2024-01-01', 1, {
+          daysOfWeek: [1],
+        });
+        expect(result).toEqual([]);
+      });
+
+      it('MAX_END_DATE 이후로는 날짜 생성 안함', () => {
+        const result = calculateWeeklyWithSpecificDays('2025-10-01', '2025-12-31', 1, {
+          daysOfWeek: [1],
+        });
+        // 2025-10-30 이후 날짜는 포함되지 않아야 함
+        expect(result.every((date) => date <= '2025-10-30')).toBe(true);
+      });
+    });
+
+    describe('다양한 요일 조합', () => {
+      it('평일만 선택 (월~금)', () => {
+        const result = calculateWeeklyWithSpecificDays(
+          '2024-01-01', // 월요일
+          '2024-01-07',
+          1,
+          { daysOfWeek: [1, 2, 3, 4, 5] }
+        );
+        expect(result).toEqual([
+          '2024-01-01',
+          '2024-01-02',
+          '2024-01-03',
+          '2024-01-04',
+          '2024-01-05',
+        ]);
+      });
+
+      it('주말만 선택 (토, 일)', () => {
+        const result = calculateWeeklyWithSpecificDays(
+          '2024-01-01', // 월요일
+          '2024-01-07',
+          1,
+          { daysOfWeek: [0, 6] } // 일, 토
+        );
+        expect(result).toEqual(['2024-01-06', '2024-01-07']);
+      });
+
+      it('모든 요일 선택', () => {
+        const result = calculateWeeklyWithSpecificDays('2024-01-01', '2024-01-07', 1, {
+          daysOfWeek: [0, 1, 2, 3, 4, 5, 6],
+        });
+        expect(result).toHaveLength(7);
+      });
+    });
+  });
+
+  describe('calculateRecurringDatesWithOptions', () => {
+    it('weeklyOptions가 있는 주간 반복', () => {
+      const result = calculateRecurringDatesWithOptions('2024-01-01', '2024-01-15', 'weekly', 1, {
+        daysOfWeek: [1, 5],
+      });
+      expect(result).toEqual([
+        '2024-01-01',
+        '2024-01-05',
+        '2024-01-08',
+        '2024-01-12',
+        '2024-01-15',
+      ]);
+    });
+
+    it('weeklyOptions가 없는 주간 반복은 기존 로직 사용', () => {
+      const result = calculateRecurringDatesWithOptions('2024-01-01', '2024-01-15', 'weekly', 1);
+      expect(result).toEqual(['2024-01-01', '2024-01-08', '2024-01-15']);
+    });
+
+    it('주간이 아닌 반복 타입에서는 weeklyOptions 무시', () => {
+      const result = calculateRecurringDatesWithOptions('2024-01-01', '2024-01-05', 'daily', 1, {
+        daysOfWeek: [1],
+      });
+      // 매일 반복으로 동작해야 함
+      expect(result).toEqual([
+        '2024-01-01',
+        '2024-01-02',
+        '2024-01-03',
+        '2024-01-04',
+        '2024-01-05',
+      ]);
+    });
+  });
+
+  describe('generateRepeatEventsWithOptions', () => {
+    const baseEvent: EventForm = {
+      title: 'Test Event',
+      date: '2024-01-01',
+      startTime: '09:00',
+      endTime: '10:00',
+      description: '',
+      location: '',
+      category: '',
+      repeat: { type: 'weekly', interval: 1 },
+      notificationTime: 10,
+    };
+
+    it('weeklyOptions가 있는 반복 일정 생성', () => {
+      const eventWithOptions = {
+        ...baseEvent,
+        repeat: {
+          ...baseEvent.repeat,
+          endDate: '2024-01-15',
+          weeklyOptions: { daysOfWeek: [1, 5] },
+        },
+      };
+
+      const result = generateRepeatEventsWithOptions(eventWithOptions);
+      expect(result).toHaveLength(5); // 1일(월), 5일(금), 8일(월), 12일(금), 15일(월)
+      expect(result.map((e) => e.date)).toEqual([
+        '2024-01-01',
+        '2024-01-05',
+        '2024-01-08',
+        '2024-01-12',
+        '2024-01-15',
+      ]);
+    });
+
+    it('weeklyOptions가 없는 일정은 기존 방식으로 생성', () => {
+      const eventWithoutOptions = {
+        ...baseEvent,
+        repeat: {
+          ...baseEvent.repeat,
+          endDate: '2024-01-15',
+        },
+      };
+
+      const result = generateRepeatEventsWithOptions(eventWithoutOptions);
+      expect(result).toHaveLength(3); // 1일, 8일, 15일
+      expect(result.map((e) => e.date)).toEqual(['2024-01-01', '2024-01-08', '2024-01-15']);
+    });
+  });
+});
+
+describe('하위 호환성', () => {
+  it('기존 calculateRecurringDates 함수 동작 유지', () => {
+    const existingResult = calculateRecurringDates('2024-01-01', '2024-01-15', 'weekly', 1);
+    const newResult = calculateRecurringDatesWithOptions('2024-01-01', '2024-01-15', 'weekly', 1);
+    expect(newResult).toEqual(existingResult);
+  });
+
+  it('기존 generateRepeatEvents 함수와 일치', () => {
+    const baseEvent: EventForm = {
+      title: 'Test',
+      date: '2024-01-01',
+      startTime: '09:00',
+      endTime: '10:00',
+      description: '',
+      location: '',
+      category: '',
+      repeat: { type: 'weekly', interval: 1, endDate: '2024-01-15' },
+      notificationTime: 10,
+    };
+
+    const existingResult = generateRepeatEvents(baseEvent);
+    const newResult = generateRepeatEventsWithOptions(baseEvent);
+    expect(newResult).toEqual(existingResult);
   });
 });
