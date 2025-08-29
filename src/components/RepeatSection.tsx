@@ -9,7 +9,8 @@ import {
   TextField,
 } from '@mui/material';
 
-import { RepeatType } from '../types';
+import { RepeatType, WeeklyOptions } from '../types';
+import { WeeklyDaysSelector } from './WeeklyDaysSelector';
 
 interface RepeatSectionProps {
   isRepeating: boolean;
@@ -20,6 +21,24 @@ interface RepeatSectionProps {
   onRepeatIntervalChange: (interval: number) => void;
   repeatEndDate: string;
   onRepeatEndDateChange: (endDate: string) => void;
+
+  // 새로 추가되는 주간 반복 관련 props
+  /**
+   * 주간 반복 시 선택된 요일 정보
+   * repeatType이 'weekly'가 아니면 무시됨
+   */
+  weeklyOptions?: WeeklyOptions;
+
+  /**
+   * 주간 요일 선택 변경 시 호출되는 콜백
+   * repeatType이 'weekly'일 때만 호출됨
+   */
+  onWeeklyOptionsChange?: (options: WeeklyOptions | undefined) => void;
+
+  /**
+   * 주간 요일 선택 필드의 검증 오류 메시지
+   */
+  weeklyOptionsError?: string;
 }
 
 /**
@@ -40,7 +59,40 @@ export const RepeatSection = ({
   onRepeatIntervalChange,
   repeatEndDate,
   onRepeatEndDateChange,
+  weeklyOptions,
+  onWeeklyOptionsChange,
+  weeklyOptionsError,
 }: RepeatSectionProps) => {
+  /**
+   * 반복 타입 변경 핸들러
+   * 주간 타입 변경 시 weeklyOptions 상태 초기화/설정
+   */
+  const handleRepeatTypeChange = (newType: RepeatType) => {
+    onRepeatTypeChange(newType);
+
+    // weeklyOptions 상태 관리
+    if (onWeeklyOptionsChange) {
+      if (newType === 'weekly') {
+        // 주간으로 변경 시 기본값 설정 (빈 배열)
+        if (!weeklyOptions) {
+          onWeeklyOptionsChange({ daysOfWeek: [] });
+        }
+      } else {
+        // 다른 타입으로 변경 시 weeklyOptions 제거
+        onWeeklyOptionsChange(undefined);
+      }
+    }
+  };
+
+  /**
+   * 주간 요일 선택 변경 핸들러
+   */
+  const handleWeeklyOptionsChange = (selectedDays: number[]) => {
+    if (onWeeklyOptionsChange && repeatType === 'weekly') {
+      onWeeklyOptionsChange({ daysOfWeek: selectedDays });
+    }
+  };
+
   return (
     <Stack spacing={2}>
       <RepeatToggle isRepeating={isRepeating} onToggle={onIsRepeatingChange} />
@@ -48,11 +100,14 @@ export const RepeatSection = ({
       {isRepeating && (
         <RepeatSettings
           repeatType={repeatType}
-          onRepeatTypeChange={onRepeatTypeChange}
+          onRepeatTypeChange={handleRepeatTypeChange}
           repeatInterval={repeatInterval}
           onRepeatIntervalChange={onRepeatIntervalChange}
           repeatEndDate={repeatEndDate}
           onRepeatEndDateChange={onRepeatEndDateChange}
+          weeklyOptions={weeklyOptions}
+          onWeeklyOptionsChange={onWeeklyOptionsChange ? handleWeeklyOptionsChange : undefined}
+          weeklyOptionsError={weeklyOptionsError}
         />
       )}
     </Stack>
@@ -95,6 +150,11 @@ interface RepeatSettingsProps {
   onRepeatIntervalChange: (interval: number) => void;
   repeatEndDate: string;
   onRepeatEndDateChange: (endDate: string) => void;
+
+  // 새로 추가되는 주간 반복 관련 props
+  weeklyOptions?: WeeklyOptions;
+  onWeeklyOptionsChange?: (selectedDays: number[]) => void;
+  weeklyOptionsError?: string;
 }
 
 const RepeatSettings = ({
@@ -104,9 +164,23 @@ const RepeatSettings = ({
   onRepeatIntervalChange,
   repeatEndDate,
   onRepeatEndDateChange,
+  weeklyOptions,
+  onWeeklyOptionsChange,
+  weeklyOptionsError,
 }: RepeatSettingsProps) => (
   <Stack spacing={2}>
     <RepeatTypeField value={repeatType} onChange={onRepeatTypeChange} />
+
+    {/* 주간 반복 시에만 요일 선택 UI 표시 */}
+    {repeatType === 'weekly' && onWeeklyOptionsChange && weeklyOptions !== undefined && (
+      <WeeklyDaysSelector
+        selectedDays={weeklyOptions?.daysOfWeek || []}
+        onSelectionChange={onWeeklyOptionsChange}
+        error={weeklyOptionsError}
+        labelId="weekly-days-selector-label"
+      />
+    )}
+
     <RepeatIntervalAndEndDate
       interval={repeatInterval}
       onIntervalChange={onRepeatIntervalChange}
