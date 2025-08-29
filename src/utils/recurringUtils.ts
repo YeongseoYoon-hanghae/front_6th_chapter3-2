@@ -229,11 +229,11 @@ export function calculateRecurringDatesWithOptions(
   weeklyOptions?: WeeklyOptions
 ): string[] {
   // weeklyOptions가 있고 주간 반복인 경우
-  if (repeatType === 'weekly' && weeklyOptions) {
+  if (repeatType === 'weekly' && weeklyOptions && weeklyOptions.daysOfWeek.length > 0) {
     return calculateWeeklyWithSpecificDays(startDate, endDate, repeatInterval, weeklyOptions);
   }
 
-  // 기존 로직 사용
+  // 기존 로직 사용 (주간 반복이지만 요일이 선택되지 않은 경우 포함)
   return calculateRecurringDates(startDate, endDate, repeatType, repeatInterval);
 }
 

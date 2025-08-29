@@ -44,7 +44,7 @@ interface EventFormProps {
 
   // 주간 반복 관련 props
   weeklyOptions?: WeeklyOptions;
-  setWeeklyOptions: (options: WeeklyOptions | undefined) => void;
+  setWeeklyOptions?: (options: WeeklyOptions | undefined) => void;
   weeklyOptionsError?: string;
 }
 
