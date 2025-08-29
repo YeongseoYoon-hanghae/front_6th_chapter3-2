@@ -1,4 +1,4 @@
-import { Event, RepeatType } from '../types';
+import { Event, RepeatType, WeeklyOptions } from '../types';
 import { useFormState } from './useFormState';
 import { useTimeValidation } from './useTimeValidation';
 
@@ -36,6 +36,7 @@ export const useEventForm = (editingEvent?: Event | null) => {
     setRepeatInterval: (value: number) => updateField('repeatInterval', value),
     setRepeatEndDate: (value: string) => updateField('repeatEndDate', value),
     setNotificationTime: (value: number) => updateField('notificationTime', value),
+    setWeeklyOptions: (value: WeeklyOptions | undefined) => updateField('weeklyOptions', value),
 
     startTimeError,
     endTimeError,

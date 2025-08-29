@@ -1,7 +1,7 @@
 import { Button, Stack, Typography } from '@mui/material';
 import React from 'react';
 
-import { Event, RepeatType } from '../types';
+import { Event, RepeatType, WeeklyOptions } from '../types';
 import { BasicInfoSection } from './BasicInfoSection';
 import { NotificationSection } from './NotificationSection';
 import { RepeatSection } from './RepeatSection';
@@ -41,6 +41,11 @@ interface EventFormProps {
   setRepeatType: (type: RepeatType) => void;
   setRepeatInterval: (interval: number) => void;
   setRepeatEndDate: (endDate: string) => void;
+
+  // 주간 반복 관련 props
+  weeklyOptions?: WeeklyOptions;
+  setWeeklyOptions: (options: WeeklyOptions | undefined) => void;
+  weeklyOptionsError?: string;
 }
 
 /**
@@ -83,6 +88,9 @@ export const EventForm = ({
   setRepeatType,
   setRepeatInterval,
   setRepeatEndDate,
+  weeklyOptions,
+  setWeeklyOptions,
+  weeklyOptionsError,
 }: EventFormProps) => {
   const formMode = createFormMode(isSingleEdit);
   const formTitle = createFormTitle(editingEvent);
@@ -122,6 +130,9 @@ export const EventForm = ({
         onRepeatIntervalChange={setRepeatInterval}
         repeatEndDate={repeatEndDate}
         onRepeatEndDateChange={setRepeatEndDate}
+        weeklyOptions={weeklyOptions}
+        onWeeklyOptionsChange={setWeeklyOptions}
+        weeklyOptionsError={weeklyOptionsError}
       />
 
       <NotificationSection

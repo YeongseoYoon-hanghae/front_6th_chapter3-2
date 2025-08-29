@@ -18,7 +18,7 @@ import { useNotifications } from './hooks/useNotifications.ts';
 import { useSearch } from './hooks/useSearch.ts';
 import { Event, EventForm as EventFormType } from './types';
 import { findOverlappingEvents } from './utils/eventOverlap';
-import { calculateRecurringDates, convertToSingleEvent } from './utils/recurringUtils';
+import { calculateRecurringDatesWithOptions, convertToSingleEvent } from './utils/recurringUtils';
 
 function App() {
   const { editingEvent, isSingleEdit, startEdit, startSingleEdit, stopEditing } = useEditingState();
@@ -46,6 +46,8 @@ function App() {
     setRepeatEndDate,
     notificationTime,
     setNotificationTime,
+    weeklyOptions,
+    setWeeklyOptions,
     startTimeError,
     endTimeError,
     handleStartTimeChange,
@@ -88,6 +90,7 @@ function App() {
         type: isRepeating ? repeatType : 'none',
         interval: repeatInterval,
         endDate: repeatEndDate || undefined,
+        weeklyOptions: isRepeating && repeatType === 'weekly' ? weeklyOptions : undefined,
       },
       notificationTime,
     };
@@ -120,11 +123,18 @@ function App() {
                   type: repeatType,
                   interval: repeatInterval,
                   endDate: repeatEndDate || undefined,
+                  weeklyOptions: repeatType === 'weekly' ? weeklyOptions : undefined,
                 },
                 notificationTime,
               };
               const end = repeatEndDate || '2025-10-30';
-              const dates = calculateRecurringDates(date, end, repeatType, repeatInterval);
+              const dates = calculateRecurringDatesWithOptions(
+                date,
+                end,
+                repeatType,
+                repeatInterval,
+                weeklyOptions
+              );
               await createRecurringEvents(baseEvent, dates);
             } else {
               await saveEvent(finalEventData);
@@ -148,11 +158,18 @@ function App() {
             type: repeatType,
             interval: repeatInterval,
             endDate: repeatEndDate || undefined,
+            weeklyOptions: repeatType === 'weekly' ? weeklyOptions : undefined,
           },
           notificationTime,
         };
         const end = repeatEndDate || '2025-10-30';
-        const dates = calculateRecurringDates(date, end, repeatType, repeatInterval);
+        const dates = calculateRecurringDatesWithOptions(
+          date,
+          end,
+          repeatType,
+          repeatInterval,
+          weeklyOptions
+        );
         await createRecurringEvents(baseEvent, dates);
       } else {
         await saveEvent(finalEventData);
@@ -236,6 +253,8 @@ function App() {
           setRepeatType={setRepeatType}
           setRepeatInterval={setRepeatInterval}
           setRepeatEndDate={setRepeatEndDate}
+          weeklyOptions={weeklyOptions}
+          setWeeklyOptions={setWeeklyOptions}
         />
 
         <Stack flex={1} spacing={5}>

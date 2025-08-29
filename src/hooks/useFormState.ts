@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 
-import { Event, RepeatType } from '../types';
+import { Event, RepeatType, WeeklyOptions, hasWeeklyOptions } from '../types';
 
 interface FormState {
   title: string;
@@ -15,6 +15,7 @@ interface FormState {
   repeatInterval: number;
   repeatEndDate: string;
   notificationTime: number;
+  weeklyOptions?: WeeklyOptions;
 }
 
 const getInitialFormState = (initialEvent?: Event): FormState => ({
@@ -30,6 +31,10 @@ const getInitialFormState = (initialEvent?: Event): FormState => ({
   repeatInterval: initialEvent?.repeat.interval || 1,
   repeatEndDate: initialEvent?.repeat.endDate || '',
   notificationTime: initialEvent?.notificationTime || 10,
+  weeklyOptions:
+    initialEvent && hasWeeklyOptions(initialEvent.repeat)
+      ? initialEvent.repeat.weeklyOptions
+      : undefined,
 });
 
 export const useFormState = (initialEvent?: Event) => {
